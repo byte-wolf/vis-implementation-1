@@ -137,6 +137,8 @@ async function resetVis() {
  * Render the scene and update all necessary shader information.
  */
 function paint() {
+    //requestAnimationFrame(paint);
+
     orbitCamera.update();
 
     if (scene && camera && renderer) {
@@ -147,5 +149,17 @@ function paint() {
         }
 
         renderer.render(scene, camera);
+    }
+}
+
+/**
+ * Update the values based on user input.
+ *
+ * @param {{stepSize: number}} settings - The settings object containing input values.
+ */
+function updateShaderInput(settings) {
+    if (raycastShader && raycastShader.material.uniforms.uStepSize) {
+        raycastShader.material.uniforms.uStepSize.value = settings.stepSize;
+        requestAnimationFrame(paint);
     }
 }
