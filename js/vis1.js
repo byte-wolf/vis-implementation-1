@@ -15,11 +15,14 @@
  * @author Diana Schalko
  */
 let renderer, camera, scene, orbitCamera;
-let canvasWidth, canvasHeight = 0;
+let canvasWidth,
+    canvasHeight = 0;
 let container = null;
 let volume = null;
 let fileInput = null;
-let testShader = null;
+// let testShader = null;
+let raycastShader = null;
+let raycastMesh = null;
 
 /**
  * Load all data and initialize UI here.
@@ -32,15 +35,16 @@ function init() {
 
     // WebGL renderer
     renderer = new THREE.WebGLRenderer();
-    renderer.setSize( canvasWidth, canvasHeight );
-    container.appendChild( renderer.domElement );
+    renderer.setSize(canvasWidth, canvasHeight);
+    //renderer.setClearColor(0x0000ff, 1);
+    container.appendChild(renderer.domElement);
 
     // read and parse volume file
     fileInput = document.getElementById("upload");
-    fileInput.addEventListener('change', readFile);
+    fileInput.addEventListener("change", readFile);
 
-    // dummy shader gets a color as input
-    testShader = new TestShader([255.0, 255.0, 0.0]);
+    // initialize raycast shader
+    raycastShader = new RaycastShader("dvr_vert", "dvr_frag");
 
     if (fileInput.files[0]) {
         readFile();
@@ -50,7 +54,7 @@ function init() {
 /**
  * Handles the file reader. No need to change anything here.
  */
-function readFile(){
+function readFile() {
     let reader = new FileReader();
     reader.onloadend = function () {
         console.log("data loaded: ");
@@ -68,20 +72,62 @@ function readFile(){
  *
  * Currently renders the bounding box of the volume.
  */
-async function resetVis(){
+async function resetVis() {
     // create new empty scene and perspective camera
     scene = new THREE.Scene();
-    camera = new THREE.PerspectiveCamera( 75, canvasWidth / canvasHeight, 0.1, 1000 );
+    camera = new THREE.PerspectiveCamera(
+        75,
+        canvasWidth / canvasHeight,
+        0.1,
+        1000
+    );
 
     // dummy scene: we render a box and attach our color test shader as material
-    const testCube = new THREE.BoxGeometry(volume.width, volume.height, volume.depth);
+    /* const testCube = new THREE.BoxGeometry(volume.width, volume.height, volume.depth);
     const testMaterial = testShader.material;
     await testShader.load(); // this function needs to be called explicitly, and only works within an async function!
     const testMesh = new THREE.Mesh(testCube, testMaterial);
-    scene.add(testMesh);
+    scene.add(testMesh); */
+
+    const volumeTexture = new THREE.Data3DTexture(
+        volume.voxels,
+        volume.width,
+        volume.height,
+        volume.depth
+    );
+
+    volumeTexture.format = THREE.RedFormat;
+    volumeTexture.type = THREE.FloatType;
+    volumeTexture.minFilter = THREE.LinearFilter;
+    volumeTexture.magFilter = THREE.LinearFilter;
+    volumeTexture.unpackAlignment = 1;
+    volumeTexture.needsUpdate = true;
+
+    raycastShader.setUniform("uVolumeTexture", volumeTexture);
+    raycastShader.setUniform(
+        "uVolumeSize",
+        new THREE.Vector3(volume.width, volume.height, volume.depth)
+    );
+    raycastShader.setUniform("uCameraPosition", camera.position);
+    raycastShader.setUniform("uStepSize", 1.0);
+
+    await raycastShader.load();
+
+    const boxGeometry = new THREE.BoxGeometry(1, 1, 1);
+    const raycastMaterial = raycastShader.material;
+    raycastMaterial.side = THREE.BackSide;
+
+    raycastMesh = new THREE.Mesh(boxGeometry, raycastMaterial);
+    raycastMesh.scale.set(volume.width, volume.height, volume.depth);
+    scene.add(raycastMesh);
 
     // our camera orbits around an object centered at (0,0,0)
-    orbitCamera = new OrbitCamera(camera, new THREE.Vector3(0,0,0), 2*volume.max, renderer.domElement);
+    orbitCamera = new OrbitCamera(
+        camera,
+        new THREE.Vector3(0, 0, 0),
+        1.1 * volume.max,
+        renderer.domElement
+    );
 
     // init paint loop
     requestAnimationFrame(paint);
@@ -90,8 +136,16 @@ async function resetVis(){
 /**
  * Render the scene and update all necessary shader information.
  */
-function paint(){
-    if (volume) {
+function paint() {
+    orbitCamera.update();
+
+    if (scene && camera && renderer) {
+        if (raycastShader && raycastShader.material.uniforms.uCameraPosition) {
+            raycastShader.material.uniforms.uCameraPosition.value.copy(
+                camera.position
+            );
+        }
+
         renderer.render(scene, camera);
     }
 }

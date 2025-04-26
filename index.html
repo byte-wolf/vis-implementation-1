@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <title>Vis1</title>
@@ -14,6 +15,7 @@
 
     <!-- include Vis1 script -->
     <script src="js/shader.js"></script>
+    <script src="js/raycastShader.js"></script>
     <script src="js/testShader.js"></script>
     <script src="js/volume.js"></script>
     <script src="js/camera.js"></script>
@@ -22,25 +24,27 @@
 </head>
 
 <!-- call init function when page has loaded -->
+
 <body onload="init()">
 
-<h1>Vis1 Exercise</h1>
-<h2>Your names here</h2>
+    <h1>Vis1 Exercise</h1>
+    <h2>Artem Maksimovich, Fabian Weichselbaum, Simon Wolffhardt</h2>
 
-<!-- data selector -->
-<p>Select your data here: <input id="upload" type="file"></p>
+    <!-- data selector -->
+    <p>Select your data here: <input id="upload" type="file"></p>
 
-<div class="container">
+    <div class="container">
 
-    <!-- volume rendering container -->
-    <div id="viewContainer"></div>
+        <!-- volume rendering container -->
+        <div id="viewContainer"></div>
 
-    <!-- container for interactive transfer function -->
-    <div id="tfContainer"></div>
+        <!-- container for interactive transfer function -->
+        <div id="tfContainer"></div>
 
-</div>
+    </div>
 
 
 
 </body>
+
 </html>
