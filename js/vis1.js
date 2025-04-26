@@ -41,6 +41,10 @@ function init() {
 
     // dummy shader gets a color as input
     testShader = new TestShader([255.0, 255.0, 0.0]);
+
+    if (fileInput.files[0]) {
+        readFile();
+    }
 }
 
 /**
