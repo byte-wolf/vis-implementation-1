@@ -15,7 +15,8 @@
  * @author Diana Schalko
  */
 let renderer, camera, scene, orbitCamera;
-let canvasWidth, canvasHeight = 0;
+let canvasWidth,
+    canvasHeight = 0;
 let container = null;
 let volume = null;
 let fileInput = null;
@@ -32,21 +33,25 @@ function init() {
 
     // WebGL renderer
     renderer = new THREE.WebGLRenderer();
-    renderer.setSize( canvasWidth, canvasHeight );
-    container.appendChild( renderer.domElement );
+    renderer.setSize(canvasWidth, canvasHeight);
+    container.appendChild(renderer.domElement);
 
     // read and parse volume file
     fileInput = document.getElementById("upload");
-    fileInput.addEventListener('change', readFile);
+    fileInput.addEventListener("change", readFile);
 
     // dummy shader gets a color as input
     testShader = new TestShader([255.0, 255.0, 0.0]);
+
+    if (fileInput.files[0]) {
+        readFile();
+    }
 }
 
 /**
  * Handles the file reader. No need to change anything here.
  */
-function readFile(){
+function readFile() {
     let reader = new FileReader();
     reader.onloadend = function () {
         console.log("data loaded: ");
@@ -67,14 +72,22 @@ function readFile(){
 // At global scope, add a variable to keep a reference to the volume rendering shader.
 let volumeShader = null;
 
-async function resetVis(){
+async function resetVis() {
     // Create new scene and camera
     scene = new THREE.Scene();
-    camera = new THREE.PerspectiveCamera(75, canvasWidth / canvasHeight, 0.1, 1000);
+    camera = new THREE.PerspectiveCamera(
+        75,
+        canvasWidth / canvasHeight,
+        0.1,
+        1000
+    );
 
     // Create the 3D texture from the volume data (this part remains correct)
     const dataTexture = new THREE.Data3DTexture(
-        volume.voxels, volume.width, volume.height, volume.depth
+        volume.voxels,
+        volume.width,
+        volume.height,
+        volume.depth
     );
     dataTexture.format = THREE.RedFormat;
     dataTexture.type = THREE.FloatType;
@@ -85,22 +98,33 @@ async function resetVis(){
 
     // Instantiate your volume shader.
     // Note: Use camera.position for now; it will be updated by the orbit camera.
-    volumeShader = new VolumeRenderer(dataTexture, camera.position);
+    volumeShader = new VolumeRenderer(
+        dataTexture,
+        camera.position,
+        new THREE.Vector3(volume.width, volume.height, volume.depth)
+    );
     await volumeShader.load();
 
     // Create a unit cube that represents the volume (normalized to [0,1]^3)
     const boxGeometry = new THREE.BoxGeometry(1, 1, 1);
-    boxGeometry.translate(0.5, 0.5, 0.5); // Centralize the cube: from (0,0,0) to (1,1,1)
+    //boxGeometry.translate(0.5, 0.5, 0.5); // Centralize the cube: from (0,0,0) to (1,1,1)
+
+    const volumeShaderMaterial = volumeShader.material;
+    //volumeShaderMaterial.side = THREE.FrontSide;
+
     const volumeMesh = new THREE.Mesh(boxGeometry, volumeShader.material);
+    volumeMesh.scale.set(volume.width, volume.height, volume.depth); // Scale to the actual volume size
     scene.add(volumeMesh);
-
-
 
     // --- IMPORTANT UPDATE ---
     // Set the orbit camera to rotate around the center of the unit cube.
     // Use a smaller radius (e.g., 2.0) so the camera is in [0,1] space.
-    orbitCamera = new OrbitCamera(camera, new THREE.Vector3(0.5, 0.5, 0.5), 2.0, renderer.domElement);
-
+    orbitCamera = new OrbitCamera(
+        camera,
+        new THREE.Vector3(0, 0, 0),
+        1.1 * volume.max,
+        renderer.domElement
+    );
 
     // Start the render loop.
     requestAnimationFrame(paint);
@@ -109,10 +133,10 @@ async function resetVis(){
 /**
  * Render the scene and update all necessary shader information.
  */
-function paint(){
+function paint() {
     if (volume) {
         // Update the volume shader with the current camera position.
-        if(volumeShader){
+        if (volumeShader) {
             volumeShader.updateCameraPosition(camera.position);
         }
         renderer.render(scene, camera);
@@ -120,4 +144,3 @@ function paint(){
     // Optionally, request another frame (if not driven by OrbitCamera's internal loop).
     // requestAnimationFrame(paint);
 }
-

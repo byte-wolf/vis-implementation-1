@@ -12,9 +12,13 @@ uniform vec3 cameraPos;
 uniform vec3 boxMin;
 uniform vec3 boxMax;
 uniform float stepSize;
+uniform vec3 volumeSize;
 
 // Returns the parametric distances (t0, t1) at which a ray (origin, dir) intersects an axis-aligned box.
 vec2 intersectBox(vec3 orig, vec3 dir, vec3 boxMin, vec3 boxMax) {
+    boxMin = -volumeSize * 0.5;
+    boxMax = volumeSize * 0.5;
+
     vec3 invDir = 1.0 / dir;
     vec3 tMinTemp = (boxMin - orig) * invDir;
     vec3 tMaxTemp = (boxMax - orig) * invDir;
@@ -31,6 +35,9 @@ void main(){
 
     // Compute the intersection of the ray with the volume bounding box.
     vec2 tHit = intersectBox(cameraPos, rayDir, boxMin, boxMax);
+
+    //fragColor = vec4(normalize(abs(vTexCoord)) * 0.5, 1.0);
+
     if(tHit.x > tHit.y){
          discard; // Ray does not intersect the volume.
     }
@@ -41,11 +48,13 @@ void main(){
 
     // Loop over samples along the ray until t exceeds tHit.y.
     // The loop iteration count (here 500) should be chosen high enough so that t steps past tHit.y.
-    for(int i = 0; i < 500; i++){
+    for(int i = 0; i < 50000; i++){
          if(t > tHit.y) break;
          vec3 samplePos = cameraPos + t * rayDir;
+         //vec3 textureCoord = (samplePos / volumeSize) + 0.5;
+         vec3 textureCoord = (samplePos / volumeSize) + 0.5;
          // Sample the volume texture (assuming the density is stored in the red channel).
-         float intensity = texture(volumeTex, samplePos).r;
+         float intensity = texture(volumeTex, textureCoord).r;
          maxIntensity = max(maxIntensity, intensity);
          t += stepSize;
     }

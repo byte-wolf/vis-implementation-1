@@ -7,7 +7,7 @@ class VolumeRenderer extends Shader {
      * @param {THREE.Data3DTexture} volumeTexture - The 3D texture containing the volume data.
      * @param {THREE.Vector3} cameraPosition - The initial camera position in normalized (0–1) volume space.
      */
-    constructor(volumeTexture, cameraPosition) {
+    constructor(volumeTexture, cameraPosition, volumeSize) {
         // Load our custom shader files from the shaders folder.
         super("mip_vert", "mip_frag");
 
@@ -20,6 +20,8 @@ class VolumeRenderer extends Shader {
         this.setUniform("cameraPos", cameraPosition);
         // Set the volume texture uniform.
         this.setUniform("volumeTex", volumeTexture);
+
+        this.setUniform("volumeSize", volumeSize);
     }
 
     /**
