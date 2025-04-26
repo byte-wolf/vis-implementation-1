@@ -12,6 +12,8 @@ uniform vec3 uCameraPosition;
 uniform sampler3D uVolumeTexture;
 uniform vec3 uVolumeSize;
 uniform float uStepSize;
+uniform vec3 uBackgroundColor;
+uniform vec3 uForegroundColor;
 
 out vec4 fragColor;
 
@@ -44,8 +46,7 @@ void main() {
     fragColor = vec4(normalize(abs(vWorldPosition)) * 0.5, 1.0);
 
     if (!hit) {
-        //discard;
-        fragColor = vec4(0.1, 0.1, 0.1, 1.0);
+        discard;
     }
 
     tMin = max(tMin, 0.0);
@@ -68,10 +69,9 @@ void main() {
         }
     }
 
-    fragColor = vec4(vec3(maxIntensity), 1.0);
-    //fragColor = vec4(0.0, 1.0, 1.0, 1.0);
-
     if (maxIntensity <= 0.1) {
         discard;
     }
+
+    fragColor = vec4(mix(uBackgroundColor, uForegroundColor, maxIntensity), 1.0);
 }

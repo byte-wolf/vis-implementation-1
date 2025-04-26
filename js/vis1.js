@@ -109,7 +109,15 @@ async function resetVis() {
         new THREE.Vector3(volume.width, volume.height, volume.depth)
     );
     raycastShader.setUniform("uCameraPosition", camera.position);
-    raycastShader.setUniform("uStepSize", 1.0);
+    raycastShader.setUniform("uStepSize", stepSize ?? 1.0);
+    raycastShader.setUniform(
+        "uBackgroundColor",
+        backgroundColor ?? [0.0, 0.0, 0.0]
+    );
+    raycastShader.setUniform(
+        "uForegroundColor",
+        foregroundColor ?? [1.0, 1.0, 1.0]
+    );
 
     await raycastShader.load();
 
@@ -128,6 +136,9 @@ async function resetVis() {
         1.1 * volume.max,
         renderer.domElement
     );
+
+    // load ui input values
+    loadInput();
 
     // init paint loop
     requestAnimationFrame(paint);
@@ -155,11 +166,43 @@ function paint() {
 /**
  * Update the values based on user input.
  *
- * @param {{stepSize: number}} settings - The settings object containing input values.
+ * @param {{stepSize: number, backgroundColor: number[], foregroundColor: number[]}} settings - The settings object containing input values.
  */
 function updateShaderInput(settings) {
-    if (raycastShader && raycastShader.material.uniforms.uStepSize) {
-        raycastShader.material.uniforms.uStepSize.value = settings.stepSize;
-        requestAnimationFrame(paint);
+    if (!raycastShader) {
+        return;
     }
+
+    if (raycastShader.material.uniforms.uStepSize) {
+        raycastShader.material.uniforms.uStepSize.value = settings.stepSize;
+    }
+
+    if (raycastShader.material.uniforms.uBackgroundColor) {
+        raycastShader.material.uniforms.uBackgroundColor.value =
+            new THREE.Vector3(
+                settings.backgroundColor[0],
+                settings.backgroundColor[1],
+                settings.backgroundColor[2]
+            );
+    }
+
+    if (raycastShader.material.uniforms.uForegroundColor) {
+        raycastShader.material.uniforms.uForegroundColor.value =
+            new THREE.Vector3(
+                settings.foregroundColor[0],
+                settings.foregroundColor[1],
+                settings.foregroundColor[2]
+            );
+    }
+
+    renderer.setClearColor(
+        new THREE.Color().setRGB(
+            settings.backgroundColor[0],
+            settings.backgroundColor[1],
+            settings.backgroundColor[2]
+        ),
+        1
+    );
+
+    requestAnimationFrame(paint);
 }
