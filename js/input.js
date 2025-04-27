@@ -18,6 +18,26 @@ function loadInput() {
     submitData();
 }
 
+function resetInputSettings() {
+    stepSize = 1.0;
+    backgroundColor = [0.0, 0.0, 0.0];
+    foregroundColor = [1.0, 1.0, 1.0];
+
+    const stepSizeInput = document.getElementById("stepSizeInput");
+    const stepSizeValueLabel = document.getElementById("stepSizeValue");
+
+    stepSizeInput.value = stepSize.toFixed(2);
+    stepSizeValueLabel.value = stepSize.toFixed(2);
+
+    const backgroundColorInput = document.getElementById("backgroundInput");
+    backgroundColorInput.value = rgbArrayToHex(backgroundColor);
+
+    const foregroundColorInput = document.getElementById("foregroundInput");
+    foregroundColorInput.value = rgbArrayToHex(foregroundColor);
+
+    submitData();
+}
+
 function updateStepSize(size) {
     const stepSizeInput = document.getElementById("stepSizeInput");
     const stepSizeValueLabel = document.getElementById("stepSizeValue");
@@ -33,6 +53,14 @@ function updateBackground(color) {
 
 function updateForeground(color) {
     foregroundColor = hexToRgbArray(color);
+}
+
+function rgbArrayToHex(rgb) {
+    return rgbToHex(
+        Math.round(rgb[0] * 255),
+        Math.round(rgb[1] * 255),
+        Math.round(rgb[2] * 255)
+    );
 }
 
 function hexToRgbArray(hex) {
