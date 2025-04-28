@@ -148,7 +148,7 @@ async function resetVis() {
  * Render the scene and update all necessary shader information.
  */
 function paint() {
-    requestAnimationFrame(paint);
+    //requestAnimationFrame(paint);
 
     orbitCamera.update();
 

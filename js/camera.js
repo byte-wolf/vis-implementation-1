@@ -67,7 +67,7 @@ class OrbitCamera {
 
         this.camera.lookAt(this.targetPos);
 
-        //requestAnimationFrame(paint);
+        requestAnimationFrame(paint);
     }
 
     #onMouseDown(event){
@@ -90,6 +90,7 @@ class OrbitCamera {
             case 0:
                 this.drag = false;
                 this.domElement.style.cursor = 'grab';
+                requestAnimationFrame(paint);
                 break;
         }
     }
