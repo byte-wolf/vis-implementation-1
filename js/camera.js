@@ -29,6 +29,8 @@ class OrbitCamera {
         this.autoRotate= false;
         this.autoRotateSpeed = 0.5;
 
+        this.isRenderScheduled = false;
+
         this.domElement = domElement;
         this.domElement.addEventListener('pointerdown', event => this.#onMouseDown(event), false);
         this.domElement.addEventListener('pointerup', event => this.#onMouseUp(event), false);
@@ -44,15 +46,28 @@ class OrbitCamera {
     update(){
         if(this.autoRotate && !this.drag){
             this.#updateCamera(0.5, 0, 0);
+            this.#scheduleRender();
         }
     }
 
     setAutoRotate(autoRotate) {
-        console.log("setAutoRotate: " + autoRotate);
         this.autoRotate = autoRotate;
+        if (autoRotate && !this.drag) {
+            this.#scheduleRender();
+        }
     }
 
-    #updateCamera(dx, dy, dz){
+    #scheduleRender() {
+        if (!this.isRenderScheduled) {
+            this.isRenderScheduled = true;
+            requestAnimationFrame(() => {
+                this.isRenderScheduled = false;
+                paint();
+            });
+        }
+    }
+
+    #updateCamera(dx, dy, dz) {
         this.phi += dx / 100.0;
         this.theta += dy / 100.0;
         this.radius += dz / 10.0;
@@ -66,8 +81,8 @@ class OrbitCamera {
         this.camera.position.z = this.radius * Math.sin(this.theta);
 
         this.camera.lookAt(this.targetPos);
-
-        requestAnimationFrame(paint);
+        
+        //requestAnimationFrame(paint);
     }
 
     #onMouseDown(event){
@@ -90,18 +105,21 @@ class OrbitCamera {
             case 0:
                 this.drag = false;
                 this.domElement.style.cursor = 'grab';
-                requestAnimationFrame(paint);
+                if(this.autoRotate) {
+                    this.#scheduleRender();
+                }
                 break;
         }
     }
 
     #onMouseMove(event){
         let that = this;
-        if(this.drag){
+        if(that.drag){
             let newPointerPos = new THREE.Vector2(event.clientX, event.clientY);
             let pointerDiff = new THREE.Vector2().subVectors(that.pointerPos, newPointerPos);
             that.pointerPos = newPointerPos;
             that.#updateCamera(pointerDiff.x, pointerDiff.y, 0);
+            that.#scheduleRender();
         }
 
     }
@@ -109,5 +127,14 @@ class OrbitCamera {
     #onMouseWheel(event){
         event.preventDefault();
         this.#updateCamera(0, 0, -event.wheelDelta);
+        this.#scheduleRender();
+    }
+
+    dispose() {
+        this.domElement.removeEventListener('pointerdown', this.#onMouseDown);
+        this.domElement.removeEventListener('pointermove', this.#onMouseMove);
+        this.domElement.removeEventListener('wheel', this.#onMouseWheel);
+        window.removeEventListener('pointerup', this.#onMouseUp);
+        this.domElement.removeEventListener('pointerleave', this.#onMouseUp);
     }
 }

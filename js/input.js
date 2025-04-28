@@ -15,6 +15,9 @@ function loadInput() {
     const foregroundColorInput = document.getElementById("foregroundInput");
     foregroundColor = hexToRgbArray(foregroundColorInput.value);
 
+    const autoRotateInput = document.getElementById("auto-rotate");
+    onAutoRotateChange(autoRotateInput.checked)
+
     submitData();
 }
 

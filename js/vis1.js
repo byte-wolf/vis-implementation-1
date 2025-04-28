@@ -150,6 +150,7 @@ async function resetVis() {
 function paint() {
     //requestAnimationFrame(paint);
 
+    console.log("update");
     orbitCamera.update();
 
     if (scene && camera && renderer) {
