@@ -17,6 +17,7 @@ body {
     flex: 2;
     border: 1px solid gray;
     border-radius: 5px;
+    cursor: grab;
 }
 
 #viewContainer > canvas {

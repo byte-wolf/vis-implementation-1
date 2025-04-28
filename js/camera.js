@@ -27,6 +27,7 @@ class OrbitCamera {
         this.pointerPos = new THREE.Vector2(0, 0);
         this.drag = false;
         this.autoRotate= false;
+        this.autoRotateSpeed = 0.5;
 
         this.domElement = domElement;
         this.domElement.addEventListener('pointerdown', event => this.#onMouseDown(event), false);
@@ -41,9 +42,14 @@ class OrbitCamera {
     }
 
     update(){
-        if(this.autoRotate){
+        if(this.autoRotate && !this.drag){
             this.#updateCamera(0.5, 0, 0);
         }
+    }
+
+    setAutoRotate(autoRotate) {
+        console.log("setAutoRotate: " + autoRotate);
+        this.autoRotate = autoRotate;
     }
 
     #updateCamera(dx, dy, dz){
@@ -61,7 +67,7 @@ class OrbitCamera {
 
         this.camera.lookAt(this.targetPos);
 
-        requestAnimationFrame(paint);
+        //requestAnimationFrame(paint);
     }
 
     #onMouseDown(event){
@@ -74,6 +80,7 @@ class OrbitCamera {
                 that.drag = true;
                 that.pointerPos.x = event.clientX;
                 that.pointerPos.y = event.clientY;
+                this.domElement.style.cursor = 'grabbing';
                 break;
         }
     }
@@ -82,6 +89,7 @@ class OrbitCamera {
         switch(event.button){
             case 0:
                 this.drag = false;
+                this.domElement.style.cursor = 'grab';
                 break;
         }
     }

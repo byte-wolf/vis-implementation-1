@@ -99,3 +99,8 @@ function submitData() {
 
     updateShaderInput({ stepSize, backgroundColor, foregroundColor });
 }
+
+function onAutoRotateChange(value) {
+    console.log("Auto-rotate set to " + value);
+    setAutoRotate(value);
+}

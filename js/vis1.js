@@ -148,7 +148,7 @@ async function resetVis() {
  * Render the scene and update all necessary shader information.
  */
 function paint() {
-    //requestAnimationFrame(paint);
+    requestAnimationFrame(paint);
 
     orbitCamera.update();
 
@@ -205,4 +205,18 @@ function updateShaderInput(settings) {
     );
 
     requestAnimationFrame(paint);
+}
+
+/**
+ * Set the auto-rotate property of the orbit camera.
+ * 
+ * @param {boolean} value 
+ */
+function setAutoRotate(value) {
+    if (!orbitCamera) {
+        return;
+    }
+
+    orbitCamera.setAutoRotate(value);
+    orbitCamera.update();
 }
