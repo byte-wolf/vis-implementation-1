@@ -160,3 +160,11 @@ h4 {
     flex-direction: row;
     gap: 15px;
 }
+
+div#histogram {
+    height: 25rem;
+}
+
+svg text {
+    fill: white;
+}

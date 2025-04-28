@@ -16,7 +16,7 @@ function loadInput() {
     foregroundColor = hexToRgbArray(foregroundColorInput.value);
 
     const autoRotateInput = document.getElementById("auto-rotate");
-    onAutoRotateChange(autoRotateInput.checked)
+    onAutoRotateChange(autoRotateInput.checked);
 
     submitData();
 }
@@ -104,6 +104,5 @@ function submitData() {
 }
 
 function onAutoRotateChange(value) {
-    console.log("Auto-rotate set to " + value);
     setAutoRotate(value);
 }

@@ -89,6 +89,8 @@ async function resetVis() {
     const testMesh = new THREE.Mesh(testCube, testMaterial);
     scene.add(testMesh); */
 
+    createHistogram(volume, "histogram", 300);
+
     const volumeTexture = new THREE.Data3DTexture(
         volume.voxels,
         volume.width,
@@ -150,7 +152,6 @@ async function resetVis() {
 function paint() {
     //requestAnimationFrame(paint);
 
-    console.log("update");
     orbitCamera.update();
 
     if (scene && camera && renderer) {
@@ -210,8 +211,8 @@ function updateShaderInput(settings) {
 
 /**
  * Set the auto-rotate property of the orbit camera.
- * 
- * @param {boolean} value 
+ *
+ * @param {boolean} value
  */
 function setAutoRotate(value) {
     if (!orbitCamera) {
