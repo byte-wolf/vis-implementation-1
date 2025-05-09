@@ -39,10 +39,14 @@ body {
     margin: 1px;
 }
 
-form.ui-field {
+.ui-field {
     border: 1px solid gray;
     border-radius: 5px;
     padding: 15px;
+
+}
+
+form.ui-field-3 {
     display: inline-grid;
     grid-template-columns: repeat(3, 1fr);
     gap: 10px;
@@ -161,10 +165,43 @@ h4 {
     gap: 15px;
 }
 
+.settings-view > div {
+    display: flex;
+    flex-direction: column;
+}
+
+.settings-view > div > .ui-field {
+    flex: 1;
+}
+
+#histogram-container{
+    border: 1px solid gray;
+    border-radius: 5px;
+    margin-top: 10px;
+}
+
 div#histogram {
     height: 25rem;
+    width: 50%;
 }
 
 svg text {
     fill: white;
+}
+
+.titlepane {
+    background-color: #2e2e2e;
+    padding: 25px 25px;
+    border-radius: 5px;
+}
+
+.titlepane h1 {
+    margin: 0;
+}
+
+.titlepane h2 {
+    font-size: 15px;
+    margin: 0;
+    padding: 0;
+    font-weight: 500;
 }

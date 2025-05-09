@@ -29,17 +29,28 @@
 
 <body onload="init()">
 
-    <h1>Vis1 Exercise</h1>
-    <h2>Artem Maksimovich, Fabian Weichselbaum, Simon Wolffhardt</h2>
+    <div class="titlepane">
+        <h1>Vis1 Exercise</h1>
+        <h2>Artem Maksimovich, Fabian Weichselbaum, Simon Wolffhardt</h2>
+    </div>
 
-    <!-- data selector -->
-    <p>Select your data here: <input id="upload" type="file"></p>
+
 
     <div class="settings-view">
         <div>
-            <h4>Render settings</h4>
+            <h4>Input file</h4>
 
             <form class="ui-field">
+                <!-- data selector -->
+                <label for="upload">Select your data here</label>
+                <div><input id="upload" type="file"></div>
+            </form>
+        </div>
+
+        <div>
+            <h4>Render settings</h4>
+
+            <form class="ui-field ui-field-3">
 
                 <!-- step size slider -->
                 <div class="input-field">
@@ -64,7 +75,7 @@
                 <!-- save button -->
                 <div class="button-row">
                     <button id="reset" class="btn-secondary" type="button" onclick="resetInputSettings()">Reset</button>
-                    <button id="submit" class="btn-primary" type="button" onclick="submitData()">Save</button>
+                    <button id="submit" class="btn-primary" type="button" onclick="submitData()" disabled>Save</button>
                 </div>
             </form>
         </div>
@@ -72,7 +83,7 @@
         <div>
             <h4>Camera settings</h4>
 
-            <form class="ui-field">
+            <form class="ui-field ui-field-3">
                 <div class="checkbox-field">
                     <label for="auto-rotate">Auto-rotate camera</label>
                     <input id="auto-rotate" type="checkbox" oninput="onAutoRotateChange(this.checked)">
@@ -81,9 +92,7 @@
         </div>
     </div>
 
-    <div>
-        <div id="histogram"></div>
-    </div>
+
 
     <div class="container">
 
@@ -93,6 +102,10 @@
         <!-- container for interactive transfer function -->
         <div id="tfContainer"></div>
 
+    </div>
+
+    <div id="histogram-container">
+        <div id="histogram"></div>
     </div>
 
 
