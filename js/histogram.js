@@ -46,13 +46,9 @@ function updateHistogram(volume) {
 
     const maxValue = d3.sum(validBins, (d) => d.length);
 
-    const yBarScale = d3
-        .scaleSqrt()
-        .domain([0, maxValue])
-        .range([0, innerHeight]);
-
-    const yOffsetScale = d3
-        .scaleSqrt()
+    const yScale = d3
+        .scalePow()
+        .exponent(0.3)
         .domain([0, maxValue])
         .range([innerHeight, 0]);
 
@@ -64,8 +60,10 @@ function updateHistogram(volume) {
         .join("rect")
         .transition()
         .duration(800)
-        .attr("y", (d) => yOffsetScale(d.length || 0))
-        .attr("height", (d) => Math.max(0, yBarScale(d.length || 0)));
+        .attr("y", (d) => yScale(d.length || 0))
+        .attr("height", (d) =>
+            Math.max(0, innerHeight - yScale(d.length || 0))
+        );
 }
 
 /**
