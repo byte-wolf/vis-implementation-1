@@ -46,6 +46,9 @@ function init() {
     // initialize raycast shader
     raycastShader = new RaycastShader("dvr_vert", "dvr_frag");
 
+    // initialize histogram
+    createHistogram("histogram", 100);
+
     if (fileInput.files[0]) {
         readFile();
     }
@@ -89,7 +92,7 @@ async function resetVis() {
     const testMesh = new THREE.Mesh(testCube, testMaterial);
     scene.add(testMesh); */
 
-    createHistogram(volume, "histogram", 300);
+    updateHistogram(volume);
 
     const volumeTexture = new THREE.Data3DTexture(
         volume.voxels,
