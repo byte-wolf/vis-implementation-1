@@ -8,12 +8,17 @@ let binCount = 100;
 let width;
 let height;
 
+let yAxisScale = 0.3;
+
+let lastVolume;
+
 /**
  * Updates the histogram with the given volume data.
  *
  * @param {Volume} volume
  */
 function updateHistogram(volume) {
+    lastVolume = volume;
     const data = volume.voxels;
 
     const container = d3.select(`#${containerId}`);
@@ -48,7 +53,7 @@ function updateHistogram(volume) {
 
     const yScale = d3
         .scalePow()
-        .exponent(0.3)
+        .exponent(yAxisScale)
         .domain([0, maxValue])
         .range([innerHeight, 0]);
 
@@ -113,7 +118,11 @@ function createHistogram(targetId, numBins = 100) {
         .text("density");
 
     // Y Axis
-    const y = d3.scaleSqrt().domain([0, 1]).range([innerHeight, 0]);
+    const y = d3
+        .scalePow()
+        .exponent(yAxisScale)
+        .domain([0, 1])
+        .range([innerHeight, 0]);
     inner
         .append("g")
         .attr("class", "y-axis")
@@ -125,7 +134,7 @@ function createHistogram(targetId, numBins = 100) {
         .attr("x", -MARGIN.top)
         .attr("y", MARGIN.left / 2)
         .style("font-size", "12px")
-        .text("intensity");
+        .text("frequency");
 
     // Bars
     inner
@@ -150,4 +159,32 @@ function createHistogram(targetId, numBins = 100) {
         .attr("text-anchor", "middle")
         .attr("dominant-baseline", "middle")
         .text("No data");
+}
+
+function updateYAxisScale(value) {
+    yAxisScale = +value;
+
+    document.getElementById("scaleValue").value = yAxisScale;
+    document.getElementById("scaleRange").value = yAxisScale;
+
+    const inner = d3.select(`#${containerId}`).select("svg").select("g");
+
+    const innerHeight = height - MARGIN.top - MARGIN.bottom;
+
+    const y = d3
+        .scalePow()
+        .exponent(yAxisScale)
+        .domain([0, 1])
+        .range([innerHeight, 0]);
+
+    inner.select(".y-axis").remove();
+
+    inner
+        .append("g")
+        .attr("class", "y-axis")
+        .call(d3.axisLeft(y).tickFormat(d3.format(".1f")));
+
+    if (lastVolume) {
+        updateHistogram(lastVolume);
+    }
 }

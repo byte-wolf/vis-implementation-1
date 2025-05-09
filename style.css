@@ -203,3 +203,10 @@ svg text {
     padding: 0;
     font-weight: 500;
 }
+
+
+.ui-vertical-center {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}

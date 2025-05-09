@@ -40,7 +40,7 @@
         <div>
             <h4>Input file</h4>
 
-            <form class="ui-field">
+            <form class="ui-field ui-vertical-center">
                 <!-- data selector -->
                 <label for="upload">Select your data here</label>
                 <div><input id="upload" type="file"></div>
@@ -83,10 +83,28 @@
         <div>
             <h4>Camera settings</h4>
 
-            <form class="ui-field ui-field-3">
+            <!-- Camera auto rotation selector -->
+            <form class="ui-field ui-vertical-center">
                 <div class="checkbox-field">
                     <label for="auto-rotate">Auto-rotate camera</label>
                     <input id="auto-rotate" type="checkbox" oninput="onAutoRotateChange(this.checked)">
+                </div>
+            </form>
+        </div>
+
+        <div>
+            <h4>Histogram settings</h4>
+
+            <form class="ui-field ui-vertical-center">
+                <!-- histogram scale slider -->
+                <div class="input-field">
+                    <label for="scaleRange">Y Axis scale factor</label>
+                    <div class="range-input">
+                        <input id="scaleRange" type="range" min="0.1" max="0.8" step="0.05" value="0.3"
+                            oninput="updateYAxisScale(this.value)">
+                        <input id="scaleValue" type="number" min="0.1" max="0.8" step="0.05" value="0.3"
+                            oninput="updateYAxisScale(this.value)">
+                    </div>
                 </div>
             </form>
         </div>
