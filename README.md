@@ -2,8 +2,12 @@
 
 Load one of the provided volume files through the GUI. 
 Rotate the orbit camera around the bounding box using the left mouse button. Zoom using the scroll wheel. 
+In the render settings, foreground and background color can be adjusted. Also the step size of the 
+volume rendering can be adjusted, lower step size gives a more detailed rendering but also is slower.
+All of these settings must be saved before showing effect.
+The Auto-rotate camera checkbox automatically rotates the volume rendering.
+The Y Axis scale factor setting only affects the histogram and not the volume rendering.
 
-**TODO: complete this section!** (how to use the editor etc.)
 
 ## Framework Description
 
