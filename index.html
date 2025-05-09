@@ -57,7 +57,7 @@
                     <label for="stepSizeInput">Step size</label>
                     <div class="range-input">
                         <input id="stepSizeInput" type="range" min="0.1" max="10" step="0.05" value="1"
-                            oninput="updateStepSize(this.value)">
+                            onmouseup="updateStepSize(this.value)">
                         <input id="stepSizeValue" type="number" min="0.1" max="50" step="0.05" value="1"
                             oninput="updateStepSize(this.value)">
                     </div>
@@ -101,7 +101,7 @@
                     <label for="scaleRange">Y Axis scale factor</label>
                     <div class="range-input">
                         <input id="scaleRange" type="range" min="0.1" max="0.8" step="0.05" value="0.3"
-                            oninput="updateYAxisScale(this.value)">
+                            onmouseup="updateYAxisScale(this.value)">
                         <input id="scaleValue" type="number" min="0.1" max="0.8" step="0.05" value="0.3"
                             oninput="updateYAxisScale(this.value)">
                     </div>
