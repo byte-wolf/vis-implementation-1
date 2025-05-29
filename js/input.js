@@ -61,8 +61,13 @@ function rgbArrayToHex(rgb) {
     );
 }
 
+/**
+ * 
+ * @param {string} hex 
+ * @returns {number[]} 
+ */
 function hexToRgbArray(hex) {
-    return rgbToArray(hexToRgb(hex));
+    return rgbToArray(hexToRgb(hex.toLocaleLowerCase()));
 }
 
 function rgbToArray(rgb) {
@@ -91,9 +96,6 @@ function rgbToHex(r, g, b) {
 }
 
 function submitData() {
-    console.log("Background color set to " + backgroundColor);
-    console.log("Foreground color set to " + foregroundColor);
-
     updateShaderInput({ backgroundColor, foregroundColor, cuttingPlanePosition, cuttingPlaneRotation });
 }
 
