@@ -13,6 +13,8 @@ let pointToColor = null;
 
 // Add this function, or integrate into createHistogram/updateHistogram
 function drawInteractivePoints(svgInner, xScale, yScale) {
+    setIsoPoints(pointsToIsoSurfacePoints(interactivePoints));
+    
     const pointColorPicker = document.getElementById('pointColorPicker');
 
     const pointsGroup = svgInner.selectAll('.interactive-point-group')
@@ -133,13 +135,16 @@ function clamp(value, min, max) {
     return Math.max(min, Math.min(max, value));
 }
 
+function pointsToIsoSurfacePoints(points) {
+    return points.map(p => ({ x: p.x, y: p.y, color: hexToRgbArray(p.color) }));
+}
+
 // Placeholder for your logic that uses the points
 function onPointUpdate() {
     // Example: get the current values of all points
-    const currentPointValues = interactivePoints.map(p => ({ x: p.x, y: p.y, color: hexToRgbArray(p.color) }));
-    //console.log("Points updated:", currentPointValues);
     // Here you would trigger updates to your shaders, other UI elements, etc.
     // For example, if these points define a transfer function for volume rendering:
     // updateShaderWithTransferFunction(currentPointValues);
-    updateTransferFunctionUniforms(currentPointValues)
+    setIsoPoints(pointsToIsoSurfacePoints(interactivePoints));
+    updateTransferFunctionUniforms();
 }

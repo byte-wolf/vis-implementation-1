@@ -25,6 +25,8 @@ let raycastShader = null;
 let raycastMesh = null;
 let controls = null;
 
+let isoSurfacePoints = [];
+
 /**
  * Load all data and initialize UI here.
  */
@@ -251,17 +253,29 @@ function updateShaderInput(settings) {
         );
     }
 
-    requestAnimationFrame(paint);
+    updateTransferFunctionUniforms();
+}
+
+/**
+ * 
+ * @param {{x: number, y: number, color: string}[]} isoPoints 
+ */
+function setIsoPoints(isoPoints) {
+    if (!isoPoints || !Array.isArray(isoPoints)) {
+        console.error("Invalid isoPoints array provided.");
+        return;
+    }
+
+    isoSurfacePoints = isoPoints;
 }
 
 /**
  * Update the transfer function uniforms based on the provided isosurface points.
- * @param {{x: number, y: number, color: string}[]} isoPoints 
  */
-function updateTransferFunctionUniforms(isoPoints) {
+function updateTransferFunctionUniforms() {
     // --- Update Transfer Function Uniforms ---
     const MAX_ISO_POINTS_JS = 4; // Must match shader and RaycastShader class
-    const numPoints = Math.min(isoPoints.length, MAX_ISO_POINTS_JS);
+    const numPoints = Math.min(isoSurfacePoints.length, MAX_ISO_POINTS_JS);
 
     raycastShader.setUniform("uNumIsoPoints", numPoints);
     console.log("Number of iso points:", numPoints);
@@ -273,18 +287,22 @@ function updateTransferFunctionUniforms(isoPoints) {
     // Sort points by iso-value (density) - important for some TF evaluation strategies,
     // though for simple isosurfaces it might not be strictly necessary for the current shader.
     // Good practice though.
-    const sortedPoints = [...isoPoints].sort((a, b) => a.x - b.x);
+    const sortedPoints = [...isoSurfacePoints].sort((a, b) => a.x - b.x);
 
-    for (let i = 0; i < MAX_ISO_POINTS_JS; i++) {
-        if (i < numPoints) {
-            const point = sortedPoints[i];
-            isoValues[i] = point.x;    // iso-value (density)
-            isoOpacities[i] = point.y; // opacity
+    console.log("Sorted iso points:", sortedPoints);
+
+    for (let idx = 0; idx < MAX_ISO_POINTS_JS; idx++) {
+        if (idx < numPoints) {
+            const point = sortedPoints[idx];
+            isoValues[idx] = point.x;    // iso-value (density)
+            isoOpacities[idx] = point.y; // opacity
             // point.color is assumed to be [r, g, b] array from hexToRgbArray
-            isoColors[i] = isoColors[i].fromArray(point.color); // Set THREE.Vector3 from array
-            console.log("Iso values:", isoValues[i]);
-            console.log("Iso opacities:", isoOpacities[i]);
-            console.log("Point color:", point.color, isoColors);
+            isoColors[idx] = new THREE.Vector3(
+                point.color[0],
+                point.color[1],
+                point.color[2]
+            );
+            console.log("Point color [", idx, "]:", point.color, isoColors);
             raycastShader.setUniform(
                 "uIsoValues",
                 isoValues
@@ -299,9 +317,9 @@ function updateTransferFunctionUniforms(isoPoints) {
             );
         } else {
             // Pad unused slots if necessary (e.g., with non-contributing values)
-            isoValues[i] = -1.0; // Or some other out-of-range value
-            isoOpacities[i] = 0.0;
-            isoColors[i] = new THREE.Vector3(0, 0, 0);
+            isoValues[idx] = -1.0; // Or some other out-of-range value
+            isoOpacities[idx] = 0.0;
+            isoColors[idx] = new THREE.Vector3(0, 0, 0);
 
             raycastShader.setUniform(
                 "uIsoValues",
@@ -326,10 +344,6 @@ function updateTransferFunctionUniforms(isoPoints) {
             parseFloat(isoRangeInput.value) || 0.05
         );
     }
-
-    // print colors uniform
-    console.log("uIsoColors:", raycastShader.material.uniforms.uIsoColors.value);
-    console.log("uIsoValues:", raycastShader.material.uniforms.uIsoValues.value);
 
     requestAnimationFrame(paint);
 }
