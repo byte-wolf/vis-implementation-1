@@ -195,6 +195,15 @@ function updateShaderInput(settings) {
             );
     }
 
+    raycastShader.setUniform(
+        "uCuttingPlanePoint",
+        new THREE.Vector3(
+            0.0,
+            settings.cuttingPlaneHeight,
+            0.0
+        )
+    );
+
     renderer.setClearColor(
         new THREE.Color().setRGB(
             settings.backgroundColor[0],
