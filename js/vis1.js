@@ -131,7 +131,7 @@ async function resetVis() {
     raycastMaterial.side = THREE.BackSide;
 
     raycastMesh = new THREE.Mesh(boxGeometry, raycastMaterial);
-    raycastMesh.scale.set(volume.width, volume.height, volume.depth);
+    //raycastMesh.scale.set(volume.width, volume.height, volume.depth);
     scene.add(raycastMesh);
 
     // our camera orbits around an object centered at (0,0,0)
