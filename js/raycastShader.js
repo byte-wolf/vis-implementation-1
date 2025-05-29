@@ -5,6 +5,5 @@ class RaycastShader extends Shader {
         this.setUniform("uVolumeTexture", null);
         this.setUniform("uVolumeSize", new THREE.Vector3(1, 1, 1));
         this.setUniform("uCameraPosition", new THREE.Vector3());
-        this.setUniform("uStepSize", 1.0);
     }
 }
