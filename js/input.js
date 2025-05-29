@@ -2,6 +2,7 @@ let backgroundColor = [0.0, 0.0, 0.0];
 let foregroundColor = [1.0, 1.0, 1.0];
 let cuttingPlanePosition = [0.0, 0.0, 0.0];
 let cuttingPlaneRotation = [0.0, 0.0, 0.0];
+let currentPlaneMode = 'none'; // 'translate' or 'rotate' or 'none'
 
 function loadInput() {
     const backgroundColorInput = document.getElementById("backgroundInput");
@@ -98,4 +99,30 @@ function submitData() {
 
 function onAutoRotateChange(value) {
     setAutoRotate(value);
+}
+
+
+/**
+ * @param {'translate' | 'rotate' | 'none'} planeMode
+ */
+function updatePlaneMode(planeMode) {
+    const translateButton = document.getElementById("translateButton");
+    const rotateButton = document.getElementById("rotateButton");
+    const visibilityButton = document.getElementById("visibilityButton");
+
+    if (planeMode === 'translate') {
+        translateButton.classList.add("active");
+        rotateButton.classList.remove("active");
+        visibilityButton.classList.remove("active");
+    } else if (planeMode === 'rotate') {
+        translateButton.classList.remove("active");
+        rotateButton.classList.add("active");
+        visibilityButton.classList.remove("active");
+    } else if (planeMode === 'none') {
+        translateButton.classList.remove("active");
+        rotateButton.classList.remove("active");
+        visibilityButton.classList.add("active");
+    }
+
+    currentPlaneMode = planeMode;
 }
