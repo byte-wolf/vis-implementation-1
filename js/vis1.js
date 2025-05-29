@@ -103,6 +103,13 @@ async function resetVis() {
         );
     });
 
+    controls.addEventListener("mouseDown", () => {
+        orbitCamera.setEnabled(false);
+    });
+    controls.addEventListener("mouseUp", () => {
+        orbitCamera.setEnabled(true);
+    });
+
     // dummy scene: we render a box and attach our color test shader as material
     /* const testCube = new THREE.BoxGeometry(volume.width, volume.height, volume.depth);
     const testMaterial = testShader.material;

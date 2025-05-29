@@ -69,8 +69,7 @@ void main() {
             discard;
             // maxIntensity = 1.0; // Skip points on the plane
             // break;
-        } else
-        if (d < 0.0) {
+        } else if (d < 0.0) {
             continue; // Skip points behind the plane
         }
 
