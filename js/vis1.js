@@ -23,6 +23,8 @@ let fileInput = null;
 // let testShader = null;
 let raycastShader = null;
 let raycastMesh = null;
+const gizmoGroup = new THREE.Group();
+let rotationGizmos = [];
 
 /**
  * Load all data and initialize UI here.
@@ -38,6 +40,10 @@ function init() {
     renderer.setSize(canvasWidth, canvasHeight);
     //renderer.setClearColor(0x0000ff, 1);
     container.appendChild(renderer.domElement);
+
+    renderer.domElement.addEventListener("pointerdown", onPointerDown);
+    renderer.domElement.addEventListener("pointermove", onPointerMove);
+    renderer.domElement.addEventListener("pointerup", onPointerUp);
 
     // read and parse volume file
     fileInput = document.getElementById("upload");
@@ -133,6 +139,8 @@ async function resetVis() {
     //raycastMesh.scale.set(volume.width, volume.height, volume.depth);
     scene.add(raycastMesh);
 
+    setupGizmo(scene);
+
     // our camera orbits around an object centered at (0,0,0)
     orbitCamera = new OrbitCamera(
         camera,
@@ -146,6 +154,56 @@ async function resetVis() {
 
     // init paint loop
     requestAnimationFrame(paint);
+}
+
+
+function setupGizmo(scene) {
+
+    const ringRadius = 75.0; // Adjust size
+    const tubeRadius = 1.5; // Adjust thickness
+
+    const rotXMat = new THREE.MeshBasicMaterial({ color: 0xff0000, side: THREE.DoubleSide, opacity: 0.3, transparent: true });
+    const rotYMat = new THREE.MeshBasicMaterial({ color: 0x00ff00, side: THREE.DoubleSide, opacity: 0.3, transparent: true });
+    const rotZMat = new THREE.MeshBasicMaterial({ color: 0x0000ff, side: THREE.DoubleSide, opacity: 0.3, transparent: true });
+
+    const rotXRing = new THREE.Mesh(new THREE.TorusGeometry(ringRadius, tubeRadius, 16, 64), rotXMat);
+    rotXRing.name = "rotXGizmo";
+    rotXRing.rotation.y = Math.PI / 2; // Orient to rotate around X
+
+    const rotYRing = new THREE.Mesh(new THREE.TorusGeometry(ringRadius, tubeRadius, 16, 64), rotYMat);
+    rotYRing.name = "rotYGizmo";
+    rotYRing.rotation.x = Math.PI / 2; // Orient to rotate around Y
+
+    const rotZRing = new THREE.Mesh(new THREE.TorusGeometry(ringRadius, tubeRadius, 16, 64), rotZMat);
+    rotZRing.name = "rotZGizmo";
+    // No initial rotation needed if it's to rotate around Z
+
+    gizmoGroup.add(rotXRing, rotYRing, rotZRing);
+    scene.add(gizmoGroup);
+
+    // Store rings for raycasting
+    rotationGizmos = [rotXRing, rotYRing, rotZRing];
+}
+
+function updateGizmoTransform(planePosition, planeNormal) {
+    gizmoGroup.position.copy(planePosition);
+
+    // For Object/Plane Space Alignment (more intuitive):
+    // Make the gizmoGroup look in the direction of the planeNormal.
+    // The 'up' vector for lookAt depends on your convention.
+    // If normal is (0,0,1), an up of (0,1,0) works.
+    // If normal is (0,1,0), an up of (0,0,1) might be better.
+    // Need a robust way to get an 'up' vector.
+    // One way: if normal is mostly Z, up is Y. If mostly Y, up is Z.
+    let upVector = new THREE.Vector3(0, 1, 0);
+    if (Math.abs(planeNormal.y) > 0.9) { // If normal is close to Y-axis
+        upVector.set(0, 0, 1);
+    }
+    //gizmoGroup.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), planeNormal.clone().normalize()); // Simpler:
+    // gizmoGroup.lookAt(planePosition.clone().add(planeNormal));
+
+    // For World Space Alignment (simpler to start):
+    // gizmoGroup.rotation.set(0, 0, 0);
 }
 
 /**
@@ -204,6 +262,16 @@ function updateShaderInput(settings) {
         )
     );
 
+    updateGizmoTransform(new THREE.Vector3(
+        0.0,
+        settings.cuttingPlaneHeight,
+        0.0
+    ), new THREE.Vector3(
+        0.3,
+        0.3,
+        0.3
+    ))
+
     renderer.setClearColor(
         new THREE.Color().setRGB(
             settings.backgroundColor[0],
@@ -229,3 +297,100 @@ function setAutoRotate(value) {
     orbitCamera.setAutoRotate(value);
     orbitCamera.update();
 }
+
+const raycaster = new THREE.Raycaster();
+const mouse = new THREE.Vector2();
+let selectedGizmo = null;
+let initialPlaneNormal = new THREE.Vector3();
+let initialQuaternion = new THREE.Quaternion(); // To store initial gizmo/plane orientation
+let dragStartPointOnGizmoPlane = new THREE.Vector3();
+let rotationAxis = new THREE.Vector3();
+
+function onPointerDown(event) {
+    mouse.x = (event.offsetX / renderer.domElement.width) * 2 - 1;
+    mouse.y = -(event.offsetY / renderer.domElement.height) * 2 + 1;
+    raycaster.setFromCamera(mouse, camera);
+    console.log("Raycaster set with mouse coordinates:", mouse);
+
+    const intersects = raycaster.intersectObjects(rotationGizmos);
+    if (intersects.length > 0) {
+        console.log("Gizmo selected:", intersects[0].object.name);
+        selectedGizmo = intersects[0].object;
+        controls.enabled = false; // Disable orbit controls
+
+        // Store initial state
+        initialPlaneNormal.copy(currentPlaneNormal); // Assuming currentPlaneNormal is your state
+        initialQuaternion.copy(gizmoGroup.quaternion); // Or plane's quaternion if orienting plane directly
+
+        // Determine rotation axis based on selectedGizmo
+        if (selectedGizmo.name === "rotXGizmo") rotationAxis.set(1, 0, 0);
+        else if (selectedGizmo.name === "rotYGizmo") rotationAxis.set(0, 1, 0);
+        else if (selectedGizmo.name === "rotZGizmo") rotationAxis.set(0, 0, 1);
+
+        // If gizmo is object-aligned, transform rotationAxis to world space
+        // OR, better: keep rotationAxis in gizmo's local space and do calcs there.
+
+        // Project click onto a plane perpendicular to the rotation axis
+        const planeOfRotation = new THREE.Plane();
+        planeOfRotation.setFromNormalAndCoplanarPoint(rotationAxis.clone().applyQuaternion(gizmoGroup.quaternion), gizmoGroup.position);
+        raycaster.ray.intersectPlane(planeOfRotation, dragStartPointOnGizmoPlane);
+    }
+}
+
+function onPointerMove(event) {
+    if (!selectedGizmo) return;
+
+    mouse.x = (event.clientX / renderer.domElement.innerWidth) * 2 - 1;
+    mouse.y = -(event.clientY / renderer.domElement.innerHeight) * 2 + 1;
+    raycaster.setFromCamera(mouse, camera);
+
+    const planeOfRotation = new THREE.Plane();
+    const worldRotationAxis = rotationAxis.clone().applyQuaternion(gizmoGroup.quaternion); // Axis in world space
+    planeOfRotation.setFromNormalAndCoplanarPoint(worldRotationAxis, gizmoGroup.position);
+
+    const currentPointOnGizmoPlane = new THREE.Vector3();
+    if (raycaster.ray.intersectPlane(planeOfRotation, currentPointOnGizmoPlane)) {
+        const v1 = dragStartPointOnGizmoPlane.clone().sub(gizmoGroup.position);
+        const v2 = currentPointOnGizmoPlane.clone().sub(gizmoGroup.position);
+
+        // Calculate angle
+        let angle = v1.angleTo(v2);
+        const cross = new THREE.Vector3().crossVectors(v1, v2);
+        if (worldRotationAxis.dot(cross) < 0) { // Check direction
+            angle = -angle;
+        }
+
+        if (isNaN(angle)) return;
+
+        // Apply rotation
+        const deltaQuaternion = new THREE.Quaternion();
+        deltaQuaternion.setFromAxisAngle(rotationAxis, angle); // Rotate around local axis of gizmo
+
+        // Apply to plane normal:
+        // Option A: Rotate initial normal
+        currentPlaneNormal.copy(initialPlaneNormal).applyQuaternion(deltaQuaternion);
+        // (If gizmo is object-aligned, its quaternion effectively IS the plane's orientation)
+        // gizmoGroup.quaternion.copy(initialQuaternion).multiply(deltaQuaternion);
+        // currentPlaneNormal.set(0,0,1).applyQuaternion(gizmoGroup.quaternion);
+
+        // Option B: Incrementally rotate (might accumulate errors)
+        // currentPlaneNormal.applyAxisAngle(worldRotationAxis, angle_delta_from_last_frame);
+
+
+        // Update gizmo and scene
+        updateGizmoTransform(currentPlanePosition, currentPlaneNormal); // currentPlanePosition may also change
+        updateShaderUniforms(); // Pass new currentPlaneNormal
+        render();
+    }
+}
+
+function onPointerUp(event) {
+    if (selectedGizmo) {
+        selectedGizmo = null;
+        controls.enabled = true; // Re-enable orbit controls
+    }
+}
+
+window.addEventListener('pointerdown', onPointerDown);
+window.addEventListener('pointermove', onPointerMove);
+window.addEventListener('pointerup', onPointerUp);
