@@ -31,6 +31,8 @@ class OrbitCamera {
 
         this.isRenderScheduled = false;
 
+        this.controlsEnabled = true;
+
         this.domElement = domElement;
         this.domElement.addEventListener('pointerdown', event => this.#onMouseDown(event), false);
         this.domElement.addEventListener('pointerup', event => this.#onMouseUp(event), false);
@@ -55,6 +57,32 @@ class OrbitCamera {
         if (autoRotate && !this.drag) {
             this.#scheduleRender();
         }
+    }
+
+    /**
+     * Enables or disables the camera's drag and wheel controls.
+     * @param {boolean} enabled - True to enable controls, false to disable.
+     */
+    setEnabled(enabled) { // <<< ADDED FUNCTION
+        this.controlsEnabled = !!enabled; // Coerce to boolean
+        if (!this.controlsEnabled) {
+            // If disabling while dragging, reset drag state
+            if (this.drag) {
+                this.drag = false;
+                this.domElement.style.cursor = 'grab'; // Reset cursor
+                if (this.autoRotate) {
+                    this.#scheduleRender(); // May want to resume auto-rotate if it was interrupted
+                }
+            }
+        }
+    }
+
+    /**
+     * Checks if the controls are currently enabled.
+     * @returns {boolean} True if controls are enabled, false otherwise.
+     */
+    isEnabled() { // <<< ADDED FUNCTION (optional getter)
+        return this.controlsEnabled;
     }
 
     #scheduleRender() {
@@ -86,6 +114,8 @@ class OrbitCamera {
     }
 
     #onMouseDown(event){
+        if (!this.controlsEnabled) return; 
+        
         event.preventDefault(); // no scrolling!
         let that = this;
 
@@ -114,7 +144,7 @@ class OrbitCamera {
 
     #onMouseMove(event){
         let that = this;
-        if(that.drag){
+        if(that.drag && this.controlsEnabled){
             let newPointerPos = new THREE.Vector2(event.clientX, event.clientY);
             let pointerDiff = new THREE.Vector2().subVectors(that.pointerPos, newPointerPos);
             that.pointerPos = newPointerPos;
@@ -125,6 +155,8 @@ class OrbitCamera {
     }
 
     #onMouseWheel(event){
+        if (!this.controlsEnabled) return; 
+        
         event.preventDefault();
         this.#updateCamera(0, 0, -event.wheelDelta);
         this.#scheduleRender();
