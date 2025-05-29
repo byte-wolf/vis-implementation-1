@@ -1,3 +1,7 @@
+// ####################################################################################
+// https://cdn.jsdelivr.net/npm/three@0.142.0/examples/js/controls/TransformControls.js
+// ####################################################################################
+
 ( function () {
 
 	const _raycaster = new THREE.Raycaster();
