@@ -1,6 +1,7 @@
 let backgroundColor = [0.0, 0.0, 0.0];
 let foregroundColor = [1.0, 1.0, 1.0];
-let cuttingPlaneHeight = 0.0;
+let cuttingPlanePosition = [0.0, 0.0, 0.0];
+let cuttingPlaneRotation = [0.0, 0.0, 0.0];
 
 function loadInput() {
     const backgroundColorInput = document.getElementById("backgroundInput");
@@ -36,8 +37,17 @@ function updateForeground(color) {
     foregroundColor = hexToRgbArray(color);
 }
 
-function updateCuttingPlane(value) {
-    cuttingPlaneHeight = parseFloat(value);
+function updateCuttingPlane(position, rotation) {
+    cuttingPlanePosition = [
+        position.x,
+        position.y,
+        position.z,
+    ]
+    cuttingPlaneRotation = [
+        rotation.x,
+        rotation.y,
+        rotation.z,
+    ];
 
     submitData();
 }
@@ -82,9 +92,8 @@ function rgbToHex(r, g, b) {
 function submitData() {
     console.log("Background color set to " + backgroundColor);
     console.log("Foreground color set to " + foregroundColor);
-    console.log("Cutting plane height set to " + cuttingPlaneHeight);
 
-    updateShaderInput({ backgroundColor, foregroundColor, cuttingPlaneHeight: cuttingPlaneHeight * 100 });
+    updateShaderInput({ backgroundColor, foregroundColor, cuttingPlanePosition, cuttingPlaneRotation });
 }
 
 function onAutoRotateChange(value) {

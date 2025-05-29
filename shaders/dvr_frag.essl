@@ -14,8 +14,8 @@ uniform vec3 uVolumeSize;
 uniform vec3 uBackgroundColor;
 uniform vec3 uForegroundColor;
 
-uniform vec3 uCuttingPlanePoint;
-vec3 uPlaneNormal = vec3(0.3);
+uniform vec3 uCuttingPlanePosition; // point
+uniform vec3 uCuttingPlaneRotation; // normal
 
 out vec4 fragColor;
 
@@ -63,7 +63,7 @@ void main() {
     for (float t = tMin; t < tMax; t += dt) {
         vec3 currentPos = rayOrigin + rayDirection * t;
 
-        float d = dot(currentPos - uCuttingPlanePoint, uPlaneNormal);
+        float d = dot(currentPos - uCuttingPlanePosition, uCuttingPlaneRotation);
 
         if (d == 0.0) {
             discard;

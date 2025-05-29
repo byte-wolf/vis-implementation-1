@@ -23,6 +23,7 @@ let fileInput = null;
 // let testShader = null;
 let raycastShader = null;
 let raycastMesh = null;
+let controls = null;
 
 /**
  * Load all data and initialize UI here.
@@ -52,6 +53,7 @@ function init() {
     if (fileInput.files[0]) {
         readFile();
     }
+
 }
 
 /**
@@ -84,6 +86,22 @@ async function resetVis() {
         0.1,
         1000
     );
+
+    const controlsObject = new THREE.Object3D();
+    controlsObject.position.set(0, 0, 0);
+    scene.add(controlsObject);
+
+    controls = new THREE.TransformControls(camera, renderer.domElement);
+    controls.visible = true;
+    controls.attach(controlsObject);
+    scene.add(controls);
+
+    controls.addEventListener("change", () => {
+        updateCuttingPlane(
+            controlsObject.position,
+            controlsObject.rotation
+        );
+    });
 
     // dummy scene: we render a box and attach our color test shader as material
     /* const testCube = new THREE.BoxGeometry(volume.width, volume.height, volume.depth);
@@ -196,11 +214,20 @@ function updateShaderInput(settings) {
     }
 
     raycastShader.setUniform(
-        "uCuttingPlanePoint",
+        "uCuttingPlanePosition",
         new THREE.Vector3(
-            0.0,
-            settings.cuttingPlaneHeight,
-            0.0
+            settings.cuttingPlanePosition[0],
+            settings.cuttingPlanePosition[1],
+            settings.cuttingPlanePosition[2],
+        )
+    );
+
+    raycastShader.setUniform(
+        "uCuttingPlaneRotation",
+        new THREE.Vector3(
+            settings.cuttingPlaneRotation[0],
+            settings.cuttingPlaneRotation[1],
+            1 - settings.cuttingPlaneRotation[2],
         )
     );
 
