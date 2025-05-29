@@ -1,14 +1,7 @@
-let stepSize = 1.0;
 let backgroundColor = [0.0, 0.0, 0.0];
 let foregroundColor = [1.0, 1.0, 1.0];
 
 function loadInput() {
-    const stepSizeInput = document.getElementById("stepSizeInput");
-    const stepSizeValueLabel = document.getElementById("stepSizeValue");
-
-    stepSizeInput.value = stepSize.toFixed(2);
-    stepSizeValueLabel.value = stepSize.toFixed(2);
-
     const backgroundColorInput = document.getElementById("backgroundInput");
     backgroundColor = hexToRgbArray(backgroundColorInput.value);
 
@@ -22,15 +15,8 @@ function loadInput() {
 }
 
 function resetInputSettings() {
-    stepSize = 1.0;
     backgroundColor = [0.0, 0.0, 0.0];
     foregroundColor = [1.0, 1.0, 1.0];
-
-    const stepSizeInput = document.getElementById("stepSizeInput");
-    const stepSizeValueLabel = document.getElementById("stepSizeValue");
-
-    stepSizeInput.value = stepSize.toFixed(2);
-    stepSizeValueLabel.value = stepSize.toFixed(2);
 
     const backgroundColorInput = document.getElementById("backgroundInput");
     backgroundColorInput.value = rgbArrayToHex(backgroundColor);
@@ -39,15 +25,6 @@ function resetInputSettings() {
     foregroundColorInput.value = rgbArrayToHex(foregroundColor);
 
     submitData();
-}
-
-function updateStepSize(size) {
-    const stepSizeInput = document.getElementById("stepSizeInput");
-    const stepSizeValueLabel = document.getElementById("stepSizeValue");
-
-    stepSize = parseFloat(size);
-    stepSizeInput.value = stepSize;
-    stepSizeValueLabel.value = stepSize;
 }
 
 function updateBackground(color) {
@@ -96,11 +73,10 @@ function rgbToHex(r, g, b) {
 }
 
 function submitData() {
-    console.log("Step size set to " + stepSize.toFixed(2));
     console.log("Background color set to " + backgroundColor);
     console.log("Foreground color set to " + foregroundColor);
 
-    updateShaderInput({ stepSize, backgroundColor, foregroundColor });
+    updateShaderInput({ backgroundColor, foregroundColor });
 }
 
 function onAutoRotateChange(value) {

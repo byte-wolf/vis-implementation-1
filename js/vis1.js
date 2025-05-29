@@ -114,7 +114,6 @@ async function resetVis() {
         new THREE.Vector3(volume.width, volume.height, volume.depth)
     );
     raycastShader.setUniform("uCameraPosition", camera.position);
-    raycastShader.setUniform("uStepSize", stepSize ?? 1.0);
     raycastShader.setUniform(
         "uBackgroundColor",
         backgroundColor ?? [0.0, 0.0, 0.0]
@@ -171,15 +170,11 @@ function paint() {
 /**
  * Update the values based on user input.
  *
- * @param {{stepSize: number, backgroundColor: number[], foregroundColor: number[]}} settings - The settings object containing input values.
+ * @param {{ backgroundColor: number[], foregroundColor: number[]}} settings - The settings object containing input values.
  */
 function updateShaderInput(settings) {
     if (!raycastShader) {
         return;
-    }
-
-    if (raycastShader.material.uniforms.uStepSize) {
-        raycastShader.material.uniforms.uStepSize.value = settings.stepSize;
     }
 
     if (raycastShader.material.uniforms.uBackgroundColor) {
