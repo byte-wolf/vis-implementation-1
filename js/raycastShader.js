@@ -9,6 +9,11 @@ class RaycastShader extends Shader {
         // --- Render Mode Uniform ---
         this.setUniform("uRenderMode", 1);
 
+        // --- Cutting Plane Uniforms ---
+        this.setUniform("uCuttingPlaneEnabled", 0); // Default to disabled
+        this.setUniform("uCuttingPlanePosition", new THREE.Vector3(0.0, 0.0, 0.0));
+        this.setUniform("uCuttingPlaneRotation", new THREE.Vector3(0.0, 0.0, 0.0));
+
         // --- Transfer Function Uniforms ---
         const MAX_ISO_POINTS_JS = 4;
         this.setUniform("uNumIsoPoints", 0);

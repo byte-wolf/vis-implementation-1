@@ -70,7 +70,6 @@ form>.input-field {
     flex-direction: column;
     justify-content: start;
     align-items: start;
-    padding-right: 15px;
 }
 
 .color-inputs-row .input-field {
@@ -441,4 +440,59 @@ h4 {
 
 .iso-points-list::-webkit-scrollbar-thumb:hover {
     background: #777;
+}
+
+/* Cutting plane controls styling */
+form.cutting-plane-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.control-section-label {
+    font-size: 12px;
+    color: #d6d6d6;
+    margin-bottom: 5px;
+    font-weight: bold;
+}
+
+.cutting-plane-buttons {
+    display: flex;
+    gap: 8px;
+    justify-content: space-between;
+}
+
+.cutting-plane-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 8px 12px;
+    background-color: #2e2e2e;
+    color: white;
+    border: 1px solid #555;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    flex: 1;
+    font-size: 12px;
+}
+
+.cutting-plane-btn:hover {
+    background-color: #4a4a4a;
+    border-color: #777;
+}
+
+.cutting-plane-btn.active {
+    background-color: #2270ff;
+    border-color: #2464da;
+    color: white;
+}
+
+.cutting-plane-btn.active:hover {
+    background-color: #4478d8;
+}
+
+.cutting-plane-btn span {
+    font-weight: 500;
 }

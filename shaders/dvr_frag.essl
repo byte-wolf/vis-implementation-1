@@ -20,6 +20,7 @@ uniform vec3 uBackgroundColor;
 uniform vec3 uForegroundColor;
 
 // --- Cutting Plane Uniforms ---
+uniform int uCuttingPlaneEnabled;
 uniform vec3 uCuttingPlanePosition;
 uniform vec3 uCuttingPlaneRotation;
 
@@ -117,10 +118,13 @@ void maximumIntensityProjectionRender(vec3 rayOrigin, vec3 rayDirection, float t
     for(float t = tMin; t < tMax; t += dt) {
         vec3 currentPos = rayOrigin + rayDirection * t;
 
-        float d = dot(currentPos - uCuttingPlanePosition, uCuttingPlaneRotation);
+        // Apply cutting plane only if enabled
+        if(uCuttingPlaneEnabled == 1) {
+            float d = dot(currentPos - uCuttingPlanePosition, uCuttingPlaneRotation);
 
-        if(d < 0.0) {
-            continue; // Skip points behind the plane
+            if(d < 0.0) {
+                continue; // Skip points behind the plane
+            }
         }
 
         vec3 textureCoord = (currentPos / uVolumeSize) + 0.5;
@@ -144,10 +148,13 @@ void transferFunctionRender(vec3 rayOrigin, vec3 rayDirection, float tMin, float
     for(float t = tMin; t < tMax; t += dt) {
         vec3 currentPos = rayOrigin + rayDirection * t;
 
-        float d = dot(currentPos - uCuttingPlanePosition, uCuttingPlaneRotation);
+        // Apply cutting plane only if enabled
+        if(uCuttingPlaneEnabled == 1) {
+            float d = dot(currentPos - uCuttingPlanePosition, uCuttingPlaneRotation);
 
-        if(d < 0.0) {
-            continue; // Skip points behind the plane
+            if(d < 0.0) {
+                continue; // Skip points behind the plane
+            }
         }
 
         vec3 textureCoord = (currentPos / uVolumeSize) + 0.5;

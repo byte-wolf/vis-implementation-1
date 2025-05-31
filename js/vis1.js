@@ -116,6 +116,11 @@ async function resetVis() {
         orbitCamera.setEnabled(true);
     });
 
+    // Initialize cutting plane position and rotation immediately
+    // This ensures the cutting plane is visible when enabled even before user interaction
+    const initialPlaneNormal = planeControlsObject.getWorldDirection(new THREE.Vector3());
+    updateCuttingPlane(planeControlsObject.position, initialPlaneNormal);
+
     updateHistogram(volume);
 
     const volumeTexture = new THREE.Data3DTexture(
@@ -194,7 +199,7 @@ function paint() {
 /**
  * Update the values based on user input.
  *
- * @param {{ backgroundColor: number[], foregroundColor: number[], renderMode?: number}} settings - The settings object containing input values.
+ * @param {{ backgroundColor?: number[], foregroundColor: number[], renderMode?: number, cuttingPlaneEnabled?: boolean}} settings - The settings object containing input values.
  */
 function updateShaderInput(settings) {
     if (!raycastShader) {
@@ -231,6 +236,11 @@ function updateShaderInput(settings) {
     // Set render mode uniform
     if (settings.renderMode !== undefined) {
         raycastShader.setUniform("uRenderMode", settings.renderMode);
+    }
+
+    // Set cutting plane enabled uniform
+    if (settings.cuttingPlaneEnabled !== undefined) {
+        raycastShader.setUniform("uCuttingPlaneEnabled", settings.cuttingPlaneEnabled ? 1 : 0);
     }
 
     if (settings.cuttingPlanePosition) {
