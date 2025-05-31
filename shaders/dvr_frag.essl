@@ -84,20 +84,45 @@ vec4 applyTransferFunction(float density) {
             // intensity = exp(-(dist * dist) / (2.0 * uIsoRange * uIsoRange)); // Gaussian-like
         }
 
-        //Im applyTransferFunction, zum Testen für den ersten Iso-Punkt:
-        /* if (idx == 0 && intensity > 0.0) {
-            return vec4(pointColor, intensity); // Zeige Rot mit Intensität des ersten Punkts
-            return vec4(1, 0, 0, intensity); // Zeige Rot mit Intensität des ersten Punkts
+        if(intensity > 0.0) {
+            vec4 currentColor = vec4(pointColor, pointOpacity * intensity);
+            // Alpha blending (front-to-back for ray marching)
+            accumulatedColor.rgb += (1.0 - accumulatedColor.a) * currentColor.a * currentColor.rgb;
+            accumulatedColor.a = (1.0 - accumulatedColor.a) * currentColor.a;
+
+            // Optimization: if fully opaque, can stop early for this ray segment
+            if(accumulatedColor.a >= 0.99) {
+                break;
+            }
         }
-        if (idx == 1 && intensity > 0.0) {
-            return vec4(uIsoColors[idx], intensity); // Zeige Rot mit Intensität des ersten Punkts
-            return vec4(0, 1, 0, intensity); // Zeige Grün mit Intensität des zweiten Punkts
-        } */
+    }
+    return accumulatedColor;
+}
+
+vec4 applyTransferFunctionOld(float density) {
+    vec4 accumulatedColor = vec4(0.0); // Start with transparent black
+
+    for(int idx = 0; idx < uNumIsoPoints; ++idx) {
+        if(idx >= MAX_ISO_POINTS)
+            break; // Should not happen if uNumIsoPoints is correct
+
+        float isoVal = uIsoValues[idx];
+        float pointOpacity = uIsoOpacities[idx];
+        vec3 pointColor = uIsoColors[idx];
+
+        // Calculate how close the density is to the current iso-value
+        float dist = abs(density - isoVal);
+        float intensity = 0.0;
+
+        if(dist < uIsoRange) {
+            intensity = 1.0 - (dist / uIsoRange); // Linear falloff
+            // intensity = exp(-(dist * dist) / (2.0 * uIsoRange * uIsoRange)); // Gaussian-like
+        }
 
         if(intensity > 0.0) {
             vec4 currentColor = vec4(pointColor, pointOpacity * intensity);
             // Alpha blending (front-to-back for ray marching)
-            accumulatedColor.rgb = (1.0 - accumulatedColor.a) * currentColor.a * currentColor.rgb;
+            accumulatedColor.rgb += (1.0 - accumulatedColor.a) * currentColor.a * currentColor.rgb;
             accumulatedColor.a += (1.0 - accumulatedColor.a) * currentColor.a;
 
             // Optimization: if fully opaque, can stop early for this ray segment
@@ -147,12 +172,12 @@ void maximumIntensityProjectionRender(vec3 rayOrigin, vec3 rayDirection, float t
 
 // https://developer.nvidia.com/gpugems/gpugems/part-vi-beyond-triangles/chapter-39-volume-rendering-techniques
 void transferFunctionRender(vec3 rayOrigin, vec3 rayDirection, float tMin, float tMax, float dt) {
-    vec4 accumulatedColor = vec4(uBackgroundColor, 0.0);
+    vec4 accumulatedColor = vec4(0.0, 0.0, 0.0, 0.0);
 
     for(float t = tMin; t < tMax; t += dt) {
         vec3 currentPos = rayOrigin + rayDirection * t;
 
-        // Apply cutting plane only if enabled
+        // Apply cutting plane
         if(uCuttingPlaneEnabled == 1) {
             float d = dot(currentPos - uCuttingPlanePosition, uCuttingPlaneRotation);
 
@@ -184,8 +209,52 @@ void transferFunctionRender(vec3 rayOrigin, vec3 rayDirection, float tMin, float
         discard;
     }
 
-    vec3 finalRgb = mix(uBackgroundColor, accumulatedColor.rgb, accumulatedColor.a);
-    fragColor = vec4(accumulatedColor.rgb, 1.0);
+    // Composite the volume's color (accumulatedColor.rgb, which is pre-multiplied)
+    // over the background color.
+    // C_final = C_volume + (1 - Alpha_volume) * C_background
+    vec3 finalRgb = accumulatedColor.rgb + (1.0 - accumulatedColor.a) * uBackgroundColor;
+    fragColor = vec4(finalRgb, 1.0); // Output opaque color after blending with background
+}
+
+void transferFunctionRenderOld(vec3 rayOrigin, vec3 rayDirection, float tMin, float tMax, float dt) {
+    vec4 accumulatedColor = vec4(uBackgroundColor, 0.0);
+
+    for(float t = tMin; t < tMax; t += dt) {
+        vec3 currentPos = rayOrigin + rayDirection * t;
+
+        // Apply cutting plane
+        if(uCuttingPlaneEnabled == 1) {
+            float d = dot(currentPos - uCuttingPlanePosition, uCuttingPlaneRotation);
+
+            if(d < 0.0) {
+                continue; // Skip points behind the plane
+            }
+        }
+
+        vec3 textureCoord = (currentPos / uVolumeSize) + 0.5;
+
+        if(all(greaterThanEqual(textureCoord, vec3(0.0))) && all(lessThanEqual(textureCoord, vec3(1.0)))) {
+            float density = texture(uVolumeTexture, textureCoord).r;
+
+            vec4 sampleColor = applyTransferFunctionOld(density);
+
+            // Front-to-back alpha compositing
+            if(sampleColor.a > 0.0) {
+                accumulatedColor.rgb += (1.0 - accumulatedColor.a) * sampleColor.a * sampleColor.rgb;
+                accumulatedColor.a += (1.0 - accumulatedColor.a) * sampleColor.a;
+            }
+
+            if(accumulatedColor.a >= 1.0) {
+                break;
+            }
+        }
+    }
+
+    if(accumulatedColor.a <= 0.01) {
+        discard;
+    }
+
+    fragColor = accumulatedColor; // Output opaque color after blending with background
 }
 
 void main() {
@@ -208,5 +277,7 @@ void main() {
         maximumIntensityProjectionRender(rayOrigin, rayDirection, tMin, tMax, dt);
     } else if(uRenderMode == 1) {
         transferFunctionRender(rayOrigin, rayDirection, tMin, tMax, dt);
+    } else if(uRenderMode == 2) {
+        transferFunctionRenderOld(rayOrigin, rayDirection, tMin, tMax, dt);
     }
 }

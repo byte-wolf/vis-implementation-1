@@ -1,7 +1,8 @@
 // Render modes configuration
 const RENDER_MODES = {
     MAX_INTENSITY_PROJECTION: { value: 0, label: "Maximum Intensity Projection" },
-    TRANSFER_FUNCTION: { value: 1, label: "Transfer Function" }
+    TRANSFER_FUNCTION: { value: 1, label: "Transfer Function" },
+    TRANSFER_FUNCTION_OLD: { value: 2, label: "Transfer Function (Old)" }
 };
 
 let backgroundColor = [0.0, 0.0, 0.0];
