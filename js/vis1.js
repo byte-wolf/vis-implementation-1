@@ -93,29 +93,10 @@ async function resetVis() {
     scene.add(planeControlsObject);
 
     planeControls = new THREE.TransformControls(camera, renderer.domElement);
-    planeControls.attach(planeControlsObject);
     planeControls.setSpace("local");
-    updatePlaneControlsMode("none");
     scene.add(planeControls);
 
-    // add plane to the scene
-    const planeGeometry = new THREE.PlaneGeometry(
-        volume.width,
-        volume.height
-    );
-    const planeMaterial = new THREE.MeshBasicMaterial({
-        color: 0x00ff00,
-        side: THREE.DoubleSide,
-        transparent: true,
-        opacity: 0.5
-    });
-    const planeMesh = new THREE.Mesh(planeGeometry, planeMaterial);
-
-    // scene.add(planeMesh);
-
     planeControls.addEventListener("change", () => {
-        planeMesh.position.copy(planeControlsObject.position);
-        planeMesh.rotation.copy(planeControlsObject.rotation);
         const planeNormal = planeControlsObject.getWorldDirection(new THREE.Vector3());
         updateCuttingPlane(
             planeControlsObject.position,
@@ -280,16 +261,17 @@ function setAutoRotate(value) {
 
 function updatePlaneControlsMode(mode) {
     if (mode === "translate") {
+        planeControls.attach(planeControlsObject);
         planeControls.showX = false;
         planeControls.showY = false;
-        planeControls.visible = true;
         planeControls.setMode("translate");
     } else if (mode === "rotate") {
+        planeControls.attach(planeControlsObject);
         planeControls.showX = true;
         planeControls.showY = true;
-        planeControls.visible = true;
         planeControls.setMode("rotate");
     } else {
-        planeControls.visible = false;
+        planeControls.detach(planeControlsObject);
     }
+    requestAnimationFrame(paint);
 }
