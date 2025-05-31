@@ -25,6 +25,7 @@ let raycastShader = null;
 let raycastMesh = null;
 let planeControls = null;
 let planeControlsObject = null;
+let isCuttingPlaneFlipped = false;
 
 let isoSurfacePoints = [];
 
@@ -116,11 +117,6 @@ async function resetVis() {
         orbitCamera.setEnabled(true);
     });
 
-    // Initialize cutting plane position and rotation immediately
-    // This ensures the cutting plane is visible when enabled even before user interaction
-    const initialPlaneNormal = planeControlsObject.getWorldDirection(new THREE.Vector3());
-    updateCuttingPlane(planeControlsObject.position, initialPlaneNormal);
-
     updateHistogram(volume);
 
     const volumeTexture = new THREE.Data3DTexture(
@@ -173,6 +169,10 @@ async function resetVis() {
     // load ui input values
     loadInput();
 
+    // Initialize cutting plane position and rotation
+    const initialPlaneNormal = planeControlsObject.getWorldDirection(new THREE.Vector3());
+    updateCuttingPlane(planeControlsObject.position, initialPlaneNormal);
+
     // init paint loop
     requestAnimationFrame(paint);
 }
@@ -199,7 +199,7 @@ function paint() {
 /**
  * Update the values based on user input.
  *
- * @param {{ backgroundColor?: number[], foregroundColor: number[], renderMode?: number, cuttingPlaneEnabled?: boolean}} settings - The settings object containing input values.
+ * @param {{ backgroundColor?: number[], foregroundColor: number[], renderMode?: number, cuttingPlaneEnabled?: boolean, cuttingPlaneFlipped?: boolean}} settings - The settings object containing input values.
  */
 function updateShaderInput(settings) {
     if (!raycastShader) {
@@ -243,6 +243,10 @@ function updateShaderInput(settings) {
         raycastShader.setUniform("uCuttingPlaneEnabled", settings.cuttingPlaneEnabled ? 1 : 0);
     }
 
+    if (settings.cuttingPlaneFlipped !== undefined) {
+        isCuttingPlaneFlipped = settings.cuttingPlaneFlipped;
+    }
+
     if (settings.cuttingPlanePosition) {
         raycastShader.setUniform(
             "uCuttingPlanePosition",
@@ -258,9 +262,9 @@ function updateShaderInput(settings) {
         raycastShader.setUniform(
             "uCuttingPlaneRotation",
             new THREE.Vector3(
-                settings.cuttingPlaneRotation[0],
-                settings.cuttingPlaneRotation[1],
-                settings.cuttingPlaneRotation[2],
+                settings.cuttingPlaneRotation[0] * (isCuttingPlaneFlipped ? -1 : 1),
+                settings.cuttingPlaneRotation[1] * (isCuttingPlaneFlipped ? -1 : 1),
+                settings.cuttingPlaneRotation[2] * (isCuttingPlaneFlipped ? -1 : 1),
             )
         );
     }

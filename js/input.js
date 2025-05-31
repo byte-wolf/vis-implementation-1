@@ -10,6 +10,7 @@ let cuttingPlanePosition = [0.0, 0.0, 0.0];
 let cuttingPlaneRotation = [0.0, 0.0, 0.0];
 let renderMode = RENDER_MODES.TRANSFER_FUNCTION.value; // Default to Transfer Function mode
 let cuttingPlaneEnabled = false; // Default to disabled
+let cuttingPlaneFlipped = false; // Default to not flipped
 let lastCuttingPlaneMode = 'none'; // Track the last selected cutting plane mode
 
 function populateRenderModeSelect() {
@@ -50,8 +51,9 @@ function updateForegroundColorVisibility() {
 function updateCuttingPlaneControlsVisibility() {
     const cuttingPlaneButtons = document.querySelector(".cutting-plane-buttons");
     const controlLabel = document.querySelector(".control-section-label");
+    const cuttingPlaneFlippedField = document.getElementById("cutting-plane-flipped").parentElement;
 
-    if (!cuttingPlaneButtons || !controlLabel) return;
+    if (!cuttingPlaneButtons || !controlLabel || !cuttingPlaneFlippedField) return;
 
     // Show cutting plane controls only when cutting plane is enabled
     if (cuttingPlaneEnabled) {
@@ -60,12 +62,18 @@ function updateCuttingPlaneControlsVisibility() {
         cuttingPlaneButtons.style.pointerEvents = "auto";
         controlLabel.style.opacity = "1";
         controlLabel.style.visibility = "visible";
+        cuttingPlaneFlippedField.style.opacity = "1";
+        cuttingPlaneFlippedField.style.visibility = "visible";
+        cuttingPlaneFlippedField.style.pointerEvents = "auto";
     } else {
         cuttingPlaneButtons.style.opacity = "0";
         cuttingPlaneButtons.style.visibility = "hidden";
         cuttingPlaneButtons.style.pointerEvents = "none";
         controlLabel.style.opacity = "0";
         controlLabel.style.visibility = "hidden";
+        cuttingPlaneFlippedField.style.opacity = "0";
+        cuttingPlaneFlippedField.style.visibility = "hidden";
+        cuttingPlaneFlippedField.style.pointerEvents = "none";
     }
 }
 
@@ -85,13 +93,16 @@ function loadInput() {
     const cuttingPlaneEnabledInput = document.getElementById("cutting-plane-enabled");
     cuttingPlaneEnabled = cuttingPlaneEnabledInput.checked;
 
+    const cuttingPlaneFlippedInput = document.getElementById("cutting-plane-flipped");
+    cuttingPlaneFlipped = cuttingPlaneFlippedInput.checked;
+
     const autoRotateInput = document.getElementById("auto-rotate");
     onAutoRotateChange(autoRotateInput.checked);
 
     // Update visibility and apply settings immediately
     updateForegroundColorVisibility();
     updateCuttingPlaneControlsVisibility();
-    updateShaderInput({ backgroundColor, foregroundColor, cuttingPlanePosition, cuttingPlaneRotation, renderMode, cuttingPlaneEnabled });
+    updateShaderInput({ backgroundColor, foregroundColor, cuttingPlanePosition, cuttingPlaneRotation, renderMode, cuttingPlaneEnabled, cuttingPlaneFlipped });
 }
 
 function resetInputSettings() {
@@ -116,12 +127,12 @@ function resetInputSettings() {
     // Update visibility and apply settings immediately
     updateForegroundColorVisibility();
     updateCuttingPlaneControlsVisibility();
-    updateShaderInput({ backgroundColor, foregroundColor, cuttingPlanePosition, cuttingPlaneRotation, renderMode, cuttingPlaneEnabled });
+    updateShaderInput({ backgroundColor, foregroundColor, cuttingPlanePosition, cuttingPlaneRotation, renderMode, cuttingPlaneEnabled, cuttingPlaneFlipped });
 }
 
 function updateBackground(color) {
     backgroundColor = hexToRgbArray(color);
-    updateShaderInput({ backgroundColor, foregroundColor, cuttingPlanePosition, cuttingPlaneRotation, renderMode, cuttingPlaneEnabled });
+    updateShaderInput({ backgroundColor, foregroundColor, cuttingPlanePosition, cuttingPlaneRotation, renderMode, cuttingPlaneEnabled, cuttingPlaneFlipped });
 }
 
 function updateForeground(color) {
@@ -141,7 +152,7 @@ function updateCuttingPlane(position, rotation) {
         rotation.z,
     ];
 
-    updateShaderInput({ backgroundColor, foregroundColor, cuttingPlanePosition, cuttingPlaneRotation, renderMode, cuttingPlaneEnabled });
+    updateShaderInput({ backgroundColor, foregroundColor, cuttingPlanePosition, cuttingPlaneRotation, renderMode, cuttingPlaneEnabled, cuttingPlaneFlipped });
 }
 
 function updateRenderMode(mode) {
@@ -149,7 +160,7 @@ function updateRenderMode(mode) {
     // Update visibility and apply immediately
     updateForegroundColorVisibility();
     updateCuttingPlaneControlsVisibility();
-    updateShaderInput({ backgroundColor, foregroundColor, cuttingPlanePosition, cuttingPlaneRotation, renderMode, cuttingPlaneEnabled });
+    updateShaderInput({ backgroundColor, foregroundColor, cuttingPlanePosition, cuttingPlaneRotation, renderMode, cuttingPlaneEnabled, cuttingPlaneFlipped });
 }
 
 function rgbArrayToHex(rgb) {
@@ -195,7 +206,7 @@ function rgbToHex(r, g, b) {
 }
 
 function submitData() {
-    updateShaderInput({ backgroundColor, foregroundColor, cuttingPlanePosition, cuttingPlaneRotation, renderMode, cuttingPlaneEnabled });
+    updateShaderInput({ backgroundColor, foregroundColor, cuttingPlanePosition, cuttingPlaneRotation, renderMode, cuttingPlaneEnabled, cuttingPlaneFlipped });
 }
 
 function onAutoRotateChange(value) {
@@ -222,7 +233,12 @@ function onCuttingPlaneEnabledChange(enabled) {
 
     // Update visibility and apply immediately
     updateCuttingPlaneControlsVisibility();
-    updateShaderInput({ backgroundColor, foregroundColor, cuttingPlanePosition, cuttingPlaneRotation, renderMode, cuttingPlaneEnabled });
+    updateShaderInput({ backgroundColor, foregroundColor, cuttingPlanePosition, cuttingPlaneRotation, renderMode, cuttingPlaneEnabled, cuttingPlaneFlipped });
+}
+
+function onCuttingPlaneFlippedChange(flipped) {
+    cuttingPlaneFlipped = flipped;
+    updateShaderInput({ backgroundColor, foregroundColor, cuttingPlanePosition, cuttingPlaneRotation, renderMode, cuttingPlaneEnabled, cuttingPlaneFlipped });
 }
 
 /**
