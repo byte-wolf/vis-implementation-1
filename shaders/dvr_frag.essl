@@ -35,6 +35,7 @@ uniform float uIsoRange;
 // --- Render Mode Uniform ---
 // 0: Maximum Intensity Projection
 // 1: Transfer Function
+// 2: Transfer Function (Old)
 uniform int uRenderMode;
 
 out vec4 fragColor;
@@ -59,44 +60,36 @@ bool intersectBox(vec3 rayOrigin, vec3 rayDirection, out float tMin, out float t
 }
 
 vec4 applyTransferFunction(float density) {
-    bool isoSurfaceFound = false;
-    vec4 accumulatedColor = vec4(0.0); // Start with transparent black
+    vec4 sampleProperties = vec4(0.0);
 
     for(int idx = 0; idx < uNumIsoPoints; ++idx) {
-        if(idx >= MAX_ISO_POINTS)
-            break; // Should not happen if uNumIsoPoints is correct
+        if(idx >= MAX_ISO_POINTS) {
+            break;
+        }
 
         float isoVal = uIsoValues[idx];
         float pointOpacity = uIsoOpacities[idx];
         vec3 pointColor = uIsoColors[idx];
-
-        if(!isoSurfaceFound) {
-            accumulatedColor.rgb = pointColor;
-        }
 
         // Calculate how close the density is to the current iso-value
         float dist = abs(density - isoVal);
         float intensity = 0.0;
 
         if(dist < uIsoRange) {
-            isoSurfaceFound = true;
             intensity = 1.0 - (dist / uIsoRange); // Linear falloff
-            // intensity = exp(-(dist * dist) / (2.0 * uIsoRange * uIsoRange)); // Gaussian-like
         }
 
         if(intensity > 0.0) {
-            vec4 currentColor = vec4(pointColor, pointOpacity * intensity);
-            // Alpha blending (front-to-back for ray marching)
-            accumulatedColor.rgb += (1.0 - accumulatedColor.a) * currentColor.a * currentColor.rgb;
-            accumulatedColor.a = (1.0 - accumulatedColor.a) * currentColor.a;
+            float currentRuleAlpha = pointOpacity * intensity;
+            sampleProperties.rgb += (1.0 - sampleProperties.a) * currentRuleAlpha * pointColor;
+            sampleProperties.a += (1.0 - sampleProperties.a) * currentRuleAlpha;
 
-            // Optimization: if fully opaque, can stop early for this ray segment
-            if(accumulatedColor.a >= 0.99) {
+            if(sampleProperties.a >= 0.99) {
                 break;
             }
         }
     }
-    return accumulatedColor;
+    return sampleProperties;
 }
 
 vec4 applyTransferFunctionOld(float density) {
@@ -173,6 +166,7 @@ void maximumIntensityProjectionRender(vec3 rayOrigin, vec3 rayDirection, float t
 // https://developer.nvidia.com/gpugems/gpugems/part-vi-beyond-triangles/chapter-39-volume-rendering-techniques
 void transferFunctionRender(vec3 rayOrigin, vec3 rayDirection, float tMin, float tMax, float dt) {
     vec4 accumulatedColor = vec4(0.0, 0.0, 0.0, 0.0);
+    float stepRatio = 0.5;
 
     for(float t = tMin; t < tMax; t += dt) {
         vec3 currentPos = rayOrigin + rayDirection * t;
@@ -191,12 +185,12 @@ void transferFunctionRender(vec3 rayOrigin, vec3 rayDirection, float tMin, float
         if(all(greaterThanEqual(textureCoord, vec3(0.0))) && all(lessThanEqual(textureCoord, vec3(1.0)))) {
             float density = texture(uVolumeTexture, textureCoord).r;
 
-            vec4 sampleColor = applyTransferFunction(density);
+            vec4 sampleProperties = applyTransferFunction(density); // Returns {premultiplied_col_A0.rgb, alpha_A0}
 
-            // Front-to-back alpha compositing
-            if(sampleColor.a > 0.0) {
-                accumulatedColor.rgb += (1.0 - accumulatedColor.a) * sampleColor.a * sampleColor.rgb;
-                accumulatedColor.a += (1.0 - accumulatedColor.a) * sampleColor.a;
+            if(sampleProperties.a > 0.0) {
+                float alpha_corrected = 1.0 - pow(1.0 - sampleProperties.a, stepRatio);
+                accumulatedColor.rgb += (1.0 - accumulatedColor.a) * sampleProperties.rgb * (alpha_corrected / sampleProperties.a);
+                accumulatedColor.a += (1.0 - accumulatedColor.a) * alpha_corrected;
             }
 
             if(accumulatedColor.a >= 1.0) {
@@ -213,7 +207,7 @@ void transferFunctionRender(vec3 rayOrigin, vec3 rayDirection, float tMin, float
     // over the background color.
     // C_final = C_volume + (1 - Alpha_volume) * C_background
     vec3 finalRgb = accumulatedColor.rgb + (1.0 - accumulatedColor.a) * uBackgroundColor;
-    fragColor = vec4(finalRgb, 1.0); // Output opaque color after blending with background
+    fragColor = accumulatedColor; // Output opaque color after blending with background
 }
 
 void transferFunctionRenderOld(vec3 rayOrigin, vec3 rayDirection, float tMin, float tMax, float dt) {
