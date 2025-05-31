@@ -119,7 +119,7 @@ void main() {
     // This helps break up aliasing patterns that cause "onion rings"
     // Use vWorldPosition (interpolated vertex world position) as a seed for randomness.
     // gl_FragCoord.xy could also be used if vWorldPosition doesn't provide enough variation.
-    tMin += random(vWorldPosition.xy) * dt;
+    //tMin += random(vWorldPosition.xy) * dt;
 
     vec4 accumulatedColor = vec4(0.0, 0.0, 0.0, 0.0);
 
