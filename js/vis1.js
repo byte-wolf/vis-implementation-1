@@ -23,7 +23,8 @@ let fileInput = null;
 // let testShader = null;
 let raycastShader = null;
 let raycastMesh = null;
-let controls = null;
+let planeControls = null;
+let planeControlsObject = null;
 
 /**
  * Load all data and initialize UI here.
@@ -87,35 +88,47 @@ async function resetVis() {
         1000
     );
 
-    const controlsObject = new THREE.Object3D();
-    controlsObject.position.set(0, 0, 0);
-    scene.add(controlsObject);
+    planeControlsObject = new THREE.Object3D();
+    planeControlsObject.position.set(0, 0, 0);
+    scene.add(planeControlsObject);
 
-    controls = new THREE.TransformControls(camera, renderer.domElement);
-    controls.visible = true;
-    controls.attach(controlsObject);
-    scene.add(controls);
+    planeControls = new THREE.TransformControls(camera, renderer.domElement);
+    planeControls.attach(planeControlsObject);
+    planeControls.setSpace("local");
+    updatePlaneControlsMode("none");
+    scene.add(planeControls);
 
-    controls.addEventListener("change", () => {
+    // add plane to the scene
+    const planeGeometry = new THREE.PlaneGeometry(
+        volume.width,
+        volume.height
+    );
+    const planeMaterial = new THREE.MeshBasicMaterial({
+        color: 0x00ff00,
+        side: THREE.DoubleSide,
+        transparent: true,
+        opacity: 0.5
+    });
+    const planeMesh = new THREE.Mesh(planeGeometry, planeMaterial);
+
+    // scene.add(planeMesh);
+
+    planeControls.addEventListener("change", () => {
+        planeMesh.position.copy(planeControlsObject.position);
+        planeMesh.rotation.copy(planeControlsObject.rotation);
+        const planeNormal = planeControlsObject.getWorldDirection(new THREE.Vector3());
         updateCuttingPlane(
-            controlsObject.position,
-            controlsObject.rotation
+            planeControlsObject.position,
+            planeNormal,
         );
     });
 
-    controls.addEventListener("mouseDown", () => {
+    planeControls.addEventListener("mouseDown", () => {
         orbitCamera.setEnabled(false);
     });
-    controls.addEventListener("mouseUp", () => {
+    planeControls.addEventListener("mouseUp", () => {
         orbitCamera.setEnabled(true);
     });
-
-    // dummy scene: we render a box and attach our color test shader as material
-    /* const testCube = new THREE.BoxGeometry(volume.width, volume.height, volume.depth);
-    const testMaterial = testShader.material;
-    await testShader.load(); // this function needs to be called explicitly, and only works within an async function!
-    const testMesh = new THREE.Mesh(testCube, testMaterial);
-    scene.add(testMesh); */
 
     updateHistogram(volume);
 
@@ -220,6 +233,7 @@ function updateShaderInput(settings) {
             );
     }
 
+
     raycastShader.setUniform(
         "uCuttingPlanePosition",
         new THREE.Vector3(
@@ -234,7 +248,7 @@ function updateShaderInput(settings) {
         new THREE.Vector3(
             settings.cuttingPlaneRotation[0],
             settings.cuttingPlaneRotation[1],
-            1 - settings.cuttingPlaneRotation[2],
+            settings.cuttingPlaneRotation[2],
         )
     );
 
@@ -242,7 +256,7 @@ function updateShaderInput(settings) {
         new THREE.Color().setRGB(
             settings.backgroundColor[0],
             settings.backgroundColor[1],
-            settings.backgroundColor[2]
+            settings.backgroundColor[2],
         ),
         1
     );
@@ -262,4 +276,20 @@ function setAutoRotate(value) {
 
     orbitCamera.setAutoRotate(value);
     orbitCamera.update();
+}
+
+function updatePlaneControlsMode(mode) {
+    if (mode === "translate") {
+        planeControls.showX = false;
+        planeControls.showY = false;
+        planeControls.visible = true;
+        planeControls.setMode("translate");
+    } else if (mode === "rotate") {
+        planeControls.showX = true;
+        planeControls.showY = true;
+        planeControls.visible = true;
+        planeControls.setMode("rotate");
+    } else {
+        planeControls.visible = false;
+    }
 }

@@ -2,7 +2,6 @@ let backgroundColor = [0.0, 0.0, 0.0];
 let foregroundColor = [1.0, 1.0, 1.0];
 let cuttingPlanePosition = [0.0, 0.0, 0.0];
 let cuttingPlaneRotation = [0.0, 0.0, 0.0];
-let currentPlaneMode = 'none'; // 'translate' or 'rotate' or 'none'
 
 function loadInput() {
     const backgroundColorInput = document.getElementById("backgroundInput");
@@ -91,9 +90,6 @@ function rgbToHex(r, g, b) {
 }
 
 function submitData() {
-    console.log("Background color set to " + backgroundColor);
-    console.log("Foreground color set to " + foregroundColor);
-
     updateShaderInput({ backgroundColor, foregroundColor, cuttingPlanePosition, cuttingPlaneRotation });
 }
 
@@ -124,5 +120,5 @@ function updatePlaneMode(planeMode) {
         visibilityButton.classList.add("active");
     }
 
-    currentPlaneMode = planeMode;
+    updatePlaneControlsMode(planeMode);
 }
