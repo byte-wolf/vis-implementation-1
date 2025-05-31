@@ -194,7 +194,7 @@ function paint() {
 /**
  * Update the values based on user input.
  *
- * @param {{ backgroundColor: number[], foregroundColor: number[]}} settings - The settings object containing input values.
+ * @param {{ backgroundColor: number[], foregroundColor: number[], renderMode?: number}} settings - The settings object containing input values.
  */
 function updateShaderInput(settings) {
     if (!raycastShader) {
@@ -228,7 +228,10 @@ function updateShaderInput(settings) {
             );
     }
 
-
+    // Set render mode uniform
+    if (settings.renderMode !== undefined) {
+        raycastShader.setUniform("uRenderMode", settings.renderMode);
+    }
 
     if (settings.cuttingPlanePosition) {
         raycastShader.setUniform(

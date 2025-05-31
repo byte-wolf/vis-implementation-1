@@ -8,26 +8,36 @@ precision highp sampler3D;
 
 in vec3 vWorldPosition;
 
+// --- Camera Uniforms ---
 uniform vec3 uCameraPosition;
+
+// --- Volume Texture Uniforms ---
 uniform sampler3D uVolumeTexture;
 uniform vec3 uVolumeSize;
+
+// --- Static background and foreground color uniforms ---
 uniform vec3 uBackgroundColor;
 uniform vec3 uForegroundColor;
 
-uniform vec3 uCuttingPlanePosition; // point
-uniform vec3 uCuttingPlaneRotation; // normal
+// --- Cutting Plane Uniforms ---
+uniform vec3 uCuttingPlanePosition;
+uniform vec3 uCuttingPlaneRotation;
 
 // --- Transfer Function / Isosurface Uniforms ---
-const int MAX_ISO_POINTS = 4; // Define a maximum
-uniform int uNumIsoPoints;      // Actual number of active points
+const int MAX_ISO_POINTS = 4;
+uniform int uNumIsoPoints;
 uniform float uIsoValues[MAX_ISO_POINTS];
 uniform float uIsoOpacities[MAX_ISO_POINTS];
 uniform vec3 uIsoColors[MAX_ISO_POINTS];
-uniform float uIsoRange; // A small range around the iso-value to "catch" densities
+uniform float uIsoRange;
+
+// --- Render Mode Uniform ---
+// 0: Maximum Intensity Projection
+// 1: Transfer Function
+uniform int uRenderMode;
 
 out vec4 fragColor;
 
-// --- Transfer Function Logic ---
 vec4 applyTransferFunction(float density) {
     vec4 accumulatedColor = vec4(0.0); // Start with transparent black
 
@@ -101,27 +111,35 @@ float random(vec2 co) {
     return fract(sin(dot(co.xy, vec2(12.9898, 78.233))) * 43758.5453);
 }
 
-void main() {
-    vec3 rayOrigin = uCameraPosition;
-    vec3 rayDirection = normalize(vWorldPosition - rayOrigin);
+void maximumIntensityProjectionRender(vec3 rayOrigin, vec3 rayDirection, float tMin, float tMax, float dt) {
+    float maxIntensity = 0.0;
 
-    float tMin, tMax;
-    bool hit = intersectBox(rayOrigin, rayDirection, tMin, tMax);
+    for(float t = tMin; t < tMax; t += dt) {
+        vec3 currentPos = rayOrigin + rayDirection * t;
 
-    if(!hit) {
+        float d = dot(currentPos - uCuttingPlanePosition, uCuttingPlaneRotation);
+
+        if(d < 0.0) {
+            continue; // Skip points behind the plane
+        }
+
+        vec3 textureCoord = (currentPos / uVolumeSize) + 0.5;
+
+        if(all(greaterThanEqual(textureCoord, vec3(0.0))) && all(lessThanEqual(textureCoord, vec3(1.0)))) {
+            float density = texture(uVolumeTexture, textureCoord).r;
+            maxIntensity = max(maxIntensity, density);
+        }
+    }
+
+    if(maxIntensity <= 0.01) {
         discard;
     }
 
-    tMin = max(tMin, 0.0);
+    fragColor = vec4(mix(uBackgroundColor, uForegroundColor, maxIntensity), 1.0);
+}
 
-    float dt = 0.5; // Reduced step size for finer sampling
-    // Jitter the starting position of the ray by a random fraction of the step size
-    // This helps break up aliasing patterns that cause "onion rings"
-    // Use vWorldPosition (interpolated vertex world position) as a seed for randomness.
-    // gl_FragCoord.xy could also be used if vWorldPosition doesn't provide enough variation.
-    //tMin += random(vWorldPosition.xy) * dt;
-
-    vec4 accumulatedColor = vec4(0.0, 0.0, 0.0, 0.0);
+void transferFunctionRender(vec3 rayOrigin, vec3 rayDirection, float tMin, float tMax, float dt) {
+    vec4 accumulatedColor = vec4(uBackgroundColor, 0.0);
 
     for(float t = tMin; t < tMax; t += dt) {
         vec3 currentPos = rayOrigin + rayDirection * t;
@@ -140,28 +158,44 @@ void main() {
             vec4 sampleColor = applyTransferFunction(density);
 
             // Front-to-back alpha compositing
-            if(sampleColor.a > 0.0) { // Only composite if the sample contributes
+            if(sampleColor.a > 0.0) {
                 accumulatedColor.rgb += (1.0 - accumulatedColor.a) * sampleColor.a * sampleColor.rgb;
                 accumulatedColor.a += (1.0 - accumulatedColor.a) * sampleColor.a;
             }
 
-            // Early ray termination if fully opaque
             if(accumulatedColor.a >= 1.0) {
                 break;
             }
         }
     }
 
-    if(accumulatedColor.a <= 0.01) { // If mostly transparent
+    if(accumulatedColor.a <= 0.01) {
         discard;
     }
 
     vec3 finalRgb = mix(uBackgroundColor, accumulatedColor.rgb, accumulatedColor.a);
     fragColor = vec4(finalRgb, accumulatedColor.a);
+}
 
-    /* if (maxIntensity <= 0.1) {
+void main() {
+    vec3 rayOrigin = uCameraPosition;
+    vec3 rayDirection = normalize(vWorldPosition - rayOrigin);
+
+    float tMin, tMax;
+    bool hit = intersectBox(rayOrigin, rayDirection, tMin, tMax);
+
+    if(!hit) {
         discard;
-    } */
+    }
 
-    //fragColor = vec4(mix(uBackgroundColor, uForegroundColor, maxIntensity), 1.0);
+    tMin = max(tMin, 0.0);
+
+    float dt = 0.5;
+    //tMin += random(vWorldPosition.xy) * dt;
+
+    if(uRenderMode == 0) {
+        maximumIntensityProjectionRender(rayOrigin, rayDirection, tMin, tMax, dt);
+    } else if(uRenderMode == 1) {
+        transferFunctionRender(rayOrigin, rayDirection, tMin, tMax, dt);
+    }
 }

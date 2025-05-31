@@ -11,6 +11,34 @@ let height;
 let yAxisScale = 0.3;
 
 let lastVolume;
+let cachedBins = null; // Cache the histogram bins
+let cachedMaxValue = 0; // Cache the max value for scaling
+
+/**
+ * Updates only the Y-axis scale and bar heights without reprocessing data
+ */
+function updateBarsScale() {
+    if (!cachedBins || cachedBins.length === 0) return;
+
+    const container = d3.select(`#${containerId}`);
+    const innerHeight = height - MARGIN.top - MARGIN.bottom;
+
+    const inner = container.select("svg").select("g");
+
+    // Create new Y scale with updated exponent
+    const yScale = d3
+        .scalePow()
+        .exponent(yAxisScale)
+        .domain([0, cachedMaxValue])
+        .range([0, innerHeight]);
+
+    // Update bars with new scale
+    inner
+        .selectAll("rect.histogram-bar")
+        .transition()
+        .duration(200) // Shorter duration for smoother experience
+        .attr("height", (d, i) => yScale(cachedBins[i]?.length || 0));
+}
 
 /**
  * Updates the histogram with the given volume data.
@@ -24,12 +52,8 @@ function updateHistogram(volume) {
     const container = d3.select(`#${containerId}`);
     const containerRect = container.node().getBoundingClientRect();
 
-    // console.log("height", height);
-
     const innerWidth = width - MARGIN.left - MARGIN.right;
     const innerHeight = height - MARGIN.top - MARGIN.bottom;
-
-    // console.log("innerHeight", innerHeight);
 
     const inner = container.select("svg").select("g");
 
@@ -43,13 +67,15 @@ function updateHistogram(volume) {
 
     const bins = histogramLayout(data);
 
+    // Cache the bins and max value for future scale updates
+    cachedBins = bins;
+
     const validBins = bins.filter((b) => typeof b.length === "number");
 
     const maxBinCount = d3.max(validBins, (d) => d.length);
 
-    const effectiveMaxCount = maxBinCount > 0 ? maxBinCount : 1;
-
     const maxValue = d3.sum(validBins, (d) => d.length);
+    cachedMaxValue = maxValue; // Cache for scale updates
 
     const yScale = d3
         .scalePow()
@@ -189,7 +215,5 @@ function updateYAxisScale(value) {
         .attr("class", "y-axis")
         .call(d3.axisLeft(y).tickFormat(d3.format(".1f")));
 
-    if (lastVolume) {
-        updateHistogram(lastVolume);
-    }
+    updateBarsScale();
 }

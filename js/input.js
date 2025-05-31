@@ -1,7 +1,49 @@
+// Render modes configuration
+const RENDER_MODES = {
+    MAX_INTENSITY_PROJECTION: { value: 0, label: "Maximum Intensity Projection" },
+    TRANSFER_FUNCTION: { value: 1, label: "Transfer Function" }
+};
+
 let backgroundColor = [0.0, 0.0, 0.0];
 let foregroundColor = [1.0, 1.0, 1.0];
 let cuttingPlanePosition = [0.0, 0.0, 0.0];
 let cuttingPlaneRotation = [0.0, 0.0, 0.0];
+let renderMode = RENDER_MODES.TRANSFER_FUNCTION.value; // Default to Transfer Function mode
+
+function populateRenderModeSelect() {
+    const select = document.getElementById("renderModeSelect");
+    if (!select) return;
+
+    // Clear existing options
+    select.innerHTML = "";
+
+    // Add options from configuration
+    Object.values(RENDER_MODES).forEach(mode => {
+        const option = document.createElement("option");
+        option.value = mode.value.toString();
+        option.textContent = mode.label;
+        select.appendChild(option);
+    });
+
+    // Set default value
+    select.value = renderMode.toString();
+}
+
+function updateForegroundColorVisibility() {
+    const foregroundColorField = document.getElementById("foregroundColorField");
+    if (!foregroundColorField) return;
+
+    // Show foreground color only for Maximum Intensity Projection mode
+    if (renderMode === RENDER_MODES.MAX_INTENSITY_PROJECTION.value) {
+        foregroundColorField.style.opacity = "1";
+        // foregroundColorField.style.visibility = "visible";
+        foregroundColorField.style.pointerEvents = "auto";
+    } else {
+        foregroundColorField.style.opacity = "0";
+        // foregroundColorField.style.visibility = "hidden";
+        foregroundColorField.style.pointerEvents = "none";
+    }
+}
 
 function loadInput() {
     const backgroundColorInput = document.getElementById("backgroundInput");
@@ -10,15 +52,24 @@ function loadInput() {
     const foregroundColorInput = document.getElementById("foregroundInput");
     foregroundColor = hexToRgbArray(foregroundColorInput.value);
 
+    // Populate render mode select dynamically
+    populateRenderModeSelect();
+
+    const renderModeSelect = document.getElementById("renderModeSelect");
+    renderMode = parseInt(renderModeSelect.value);
+
     const autoRotateInput = document.getElementById("auto-rotate");
     onAutoRotateChange(autoRotateInput.checked);
 
-    submitData();
+    // Update visibility and apply settings immediately
+    updateForegroundColorVisibility();
+    updateShaderInput({ backgroundColor, foregroundColor, cuttingPlanePosition, cuttingPlaneRotation, renderMode });
 }
 
 function resetInputSettings() {
     backgroundColor = [0.0, 0.0, 0.0];
     foregroundColor = [1.0, 1.0, 1.0];
+    renderMode = RENDER_MODES.TRANSFER_FUNCTION.value; // Reset to Transfer Function mode
 
     const backgroundColorInput = document.getElementById("backgroundInput");
     backgroundColorInput.value = rgbArrayToHex(backgroundColor);
@@ -26,15 +77,24 @@ function resetInputSettings() {
     const foregroundColorInput = document.getElementById("foregroundInput");
     foregroundColorInput.value = rgbArrayToHex(foregroundColor);
 
-    submitData();
+    // Repopulate and reset render mode select
+    populateRenderModeSelect();
+
+    // Update visibility and apply settings immediately
+    updateForegroundColorVisibility();
+    updateShaderInput({ backgroundColor, foregroundColor, cuttingPlanePosition, cuttingPlaneRotation, renderMode });
 }
 
 function updateBackground(color) {
     backgroundColor = hexToRgbArray(color);
+    // Apply immediately
+    updateShaderInput({ backgroundColor, foregroundColor, cuttingPlanePosition, cuttingPlaneRotation, renderMode });
 }
 
 function updateForeground(color) {
     foregroundColor = hexToRgbArray(color);
+    // Apply immediately
+    updateShaderInput({ backgroundColor, foregroundColor, cuttingPlanePosition, cuttingPlaneRotation, renderMode });
 }
 
 function updateCuttingPlane(position, rotation) {
@@ -49,7 +109,15 @@ function updateCuttingPlane(position, rotation) {
         rotation.z,
     ];
 
-    submitData();
+    // Apply immediately
+    updateShaderInput({ backgroundColor, foregroundColor, cuttingPlanePosition, cuttingPlaneRotation, renderMode });
+}
+
+function updateRenderMode(mode) {
+    renderMode = parseInt(mode);
+    // Update visibility and apply immediately
+    updateForegroundColorVisibility();
+    updateShaderInput({ backgroundColor, foregroundColor, cuttingPlanePosition, cuttingPlaneRotation, renderMode });
 }
 
 function rgbArrayToHex(rgb) {
@@ -78,10 +146,10 @@ function hexToRgb(hex) {
     var result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
     return result
         ? {
-              r: parseInt(result[1], 16),
-              g: parseInt(result[2], 16),
-              b: parseInt(result[3], 16),
-          }
+            r: parseInt(result[1], 16),
+            g: parseInt(result[2], 16),
+            b: parseInt(result[3], 16),
+        }
         : null;
 }
 
@@ -95,7 +163,7 @@ function rgbToHex(r, g, b) {
 }
 
 function submitData() {
-    updateShaderInput({ backgroundColor, foregroundColor, cuttingPlanePosition, cuttingPlaneRotation });
+    updateShaderInput({ backgroundColor, foregroundColor, cuttingPlanePosition, cuttingPlaneRotation, renderMode });
 }
 
 function onAutoRotateChange(value) {

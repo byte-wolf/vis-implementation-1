@@ -53,12 +53,28 @@ form.ui-field-3 {
     gap: 10px;
 }
 
+form.render-camera-settings {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.color-inputs-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+
 form>.input-field {
     display: flex;
     flex-direction: column;
     justify-content: start;
     align-items: start;
     padding-right: 15px;
+}
+
+.color-inputs-row .input-field {
+    padding-right: 0;
 }
 
 label {
@@ -123,6 +139,17 @@ input[type="number"] {
     padding: 4px 8px;
 }
 
+select {
+    border-radius: 5px;
+    border: none;
+    padding: 4px 8px;
+    background-color: white;
+    color: black;
+    font-size: 14px;
+    cursor: pointer;
+    width: 100%;
+}
+
 input[type="color"] {
     border-radius: 5px;
     overflow: hidden;
@@ -132,6 +159,11 @@ input[type="color"] {
     background-color: white;
     height: 25px;
     cursor: pointer;
+}
+
+/* Smooth transition for foreground color field visibility */
+#foregroundColorField {
+    transition: opacity 0.3s ease-in-out;
 }
 
 input[type="file"] {
@@ -193,7 +225,7 @@ h4 {
 
 .titlepane {
     background-color: #2e2e2e;
-    padding: 25px 25px;
+    padding: 20px 20px;
     border-radius: 5px;
 }
 
@@ -213,6 +245,7 @@ h4 {
     display: flex;
     flex-direction: column;
     justify-content: center;
+    gap: 10px;
 }
 
 

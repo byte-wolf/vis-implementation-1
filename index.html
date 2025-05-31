@@ -41,42 +41,42 @@
 
     <div class="settings-view">
         <div>
-            <h4>Input file</h4>
+            <h4>Input file and render mode</h4>
 
-            <form class="ui-field ui-vertical-center">
+            <form class="ui-field">
                 <!-- data selector -->
-                <label for="upload">Select your data here</label>
-                <div><input id="upload" type="file"></div>
-            </form>
-        </div>
-
-        <div>
-            <h4>Render settings</h4>
-
-            <form class="ui-field ui-field-3">
-                <!-- background picker -->
-                <div class="input-field">
-                    <label for="backgroundInput">Background color</label>
-                    <input id="backgroundInput" type="color" value="#000000" oninput="updateBackground(this.value)">
+                <div>
+                    <label for="upload">Select your data here</label>
+                    <div><input id="upload" type="file"></div>
                 </div>
-                <!-- foreground picker -->
+
+                <!-- render mode selector -->
                 <div class="input-field">
-                    <label for="foregroundInput">Foreground color</label>
-                    <input id="foregroundInput" type="color" value="#FFFFFF" oninput="updateForeground(this.value)">
-                </div>
-                <!-- save button -->
-                <div class="button-row">
-                    <button id="reset" class="btn-secondary" type="button" onclick="resetInputSettings()">Reset</button>
-                    <button id="submit" class="btn-primary" type="button" onclick="submitData()">Save</button>
+                    <label for="renderModeSelect">Render mode</label>
+                    <select id="renderModeSelect" onchange="updateRenderMode(this.value)">
+                        <!-- Options will be populated dynamically by JavaScript -->
+                    </select>
                 </div>
             </form>
         </div>
 
         <div>
-            <h4>Camera settings</h4>
+            <h4>Render and camera settings</h4>
 
-            <!-- Camera auto rotation selector -->
-            <form class="ui-field ui-vertical-center">
+            <form class="ui-field render-camera-settings">
+                <!-- background and foreground picker side by side -->
+                <div class="color-inputs-row">
+                    <div class="input-field">
+                        <label for="backgroundInput">Background color</label>
+                        <input id="backgroundInput" type="color" value="#000000" oninput="updateBackground(this.value)">
+                    </div>
+                    <div id="foregroundColorField" class="input-field">
+                        <label for="foregroundInput">Foreground color</label>
+                        <input id="foregroundInput" type="color" value="#FFFFFF" oninput="updateForeground(this.value)">
+                    </div>
+                </div>
+
+                <!-- Camera auto rotation -->
                 <div class="checkbox-field">
                     <label for="auto-rotate">Auto-rotate camera</label>
                     <input id="auto-rotate" type="checkbox" oninput="onAutoRotateChange(this.checked)">
@@ -85,16 +85,16 @@
         </div>
 
         <div>
-            <h4>Histogram settings</h4>
+            <h4>Histogram and transfer function settings</h4>
 
-            <form class="ui-field ui-vertical-center">
+            <form class="ui-field">
                 <!-- histogram scale slider -->
                 <div class="input-field">
-                    <label for="scaleRange">Y Axis scale factor</label>
+                    <label for="scaleRange">Histogram scale factor</label>
                     <div class="range-input">
-                        <input id="scaleRange" type="range" min="0.1" max="0.8" step="0.05" value="0.3"
-                            onmouseup="updateYAxisScale(this.value)">
-                        <input id="scaleValue" type="number" min="0.1" max="0.8" step="0.05" value="0.3"
+                        <input id="scaleRange" type="range" min="0.1" max="1.0" step="0.05" value="0.3"
+                            oninput="updateYAxisScale(this.value)">
+                        <input id="scaleValue" type="number" min="0.1" max="1.0" step="0.05" value="0.3"
                             oninput="updateYAxisScale(this.value)">
                     </div>
                 </div>
