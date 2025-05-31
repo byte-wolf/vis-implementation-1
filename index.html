@@ -45,17 +45,19 @@
 
             <form class="ui-field">
                 <!-- data selector -->
-                <div>
-                    <label for="upload">Select your data here</label>
-                    <div><input id="upload" type="file"></div>
-                </div>
+                <div class="input-container">
+                    <div>
+                        <label for="upload">Select your data here</label>
+                        <div><input id="upload" type="file"></div>
+                    </div>
 
-                <!-- render mode selector -->
-                <div class="input-field">
-                    <label for="renderModeSelect">Render mode</label>
-                    <select id="renderModeSelect" onchange="updateRenderMode(this.value)">
-                        <!-- Options will be populated dynamically by JavaScript -->
-                    </select>
+                    <!-- render mode selector -->
+                    <div class="input-field">
+                        <label for="renderModeSelect">Render mode</label>
+                        <select id="renderModeSelect" onchange="updateRenderMode(this.value)">
+                            <!-- Options will be populated dynamically by JavaScript -->
+                        </select>
+                    </div>
                 </div>
             </form>
         </div>

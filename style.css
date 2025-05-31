@@ -496,3 +496,9 @@ form.cutting-plane-controls {
 .cutting-plane-btn span {
     font-weight: 500;
 }
+
+.input-container {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
