@@ -21,6 +21,7 @@
     <script src="js/volume.js"></script>
     <script src="js/camera.js"></script>
     <script src="js/input.js"></script>
+    <script src="js/transferFunctionControls.js"></script>
     <script src="js/histogram.js"></script>
     <script src="js/vis1.js"></script>
     <script src="js/math.js"></script>
@@ -97,6 +98,32 @@
                             oninput="updateYAxisScale(this.value)">
                     </div>
                 </div>
+                <!-- iso range slider -->
+                <div class="input-field">
+                    <label for="isoRangeInput">Iso-surface range</label>
+                    <div class="range-input">
+                        <input id="isoRangeInput" type="range" min="0.01" max="0.5" step="0.01" value="0.05"
+                            oninput="updateIsoRange(this.value)">
+                        <input id="isoRangeValue" type="number" min="0.01" max="0.5" step="0.01" value="0.05"
+                            oninput="updateIsoRange(this.value)">
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <div>
+            <h4>Iso points</h4>
+
+            <form class="ui-field">
+                <div class="iso-points-controls">
+                    <div id="isoPointsList" class="iso-points-list">
+                        <!-- Points will be rendered here -->
+                    </div>
+                    <div>
+                        <button type="button" class="iso-point-add-button" onclick="addIsoPoint()">Add Point</button>
+                        <span id="isoPointsCount" class="iso-points-count">(2/5)</span>
+                    </div>
+                </div>
             </form>
         </div>
     </div>
@@ -113,19 +140,44 @@
 
             <div class="inline-controls">
                 <button id="visibilityButton" class="active" onclick="updatePlaneMode('none')">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-eye-off-icon lucide-eye-off"><path d="M10.733 5.076a10.744 10.744 0 0 1 11.205 6.575 1 1 0 0 1 0 .696 10.747 10.747 0 0 1-1.444 2.49"/><path d="M14.084 14.158a3 3 0 0 1-4.242-4.242"/><path d="M17.479 17.499a10.75 10.75 0 0 1-15.417-5.151 1 1 0 0 1 0-.696 10.75 10.75 0 0 1 4.446-5.143"/><path d="m2 2 20 20"/></svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                        class="lucide lucide-eye-off-icon lucide-eye-off">
+                        <path
+                            d="M10.733 5.076a10.744 10.744 0 0 1 11.205 6.575 1 1 0 0 1 0 .696 10.747 10.747 0 0 1-1.444 2.49" />
+                        <path d="M14.084 14.158a3 3 0 0 1-4.242-4.242" />
+                        <path
+                            d="M17.479 17.499a10.75 10.75 0 0 1-15.417-5.151 1 1 0 0 1 0-.696 10.75 10.75 0 0 1 4.446-5.143" />
+                        <path d="m2 2 20 20" />
+                    </svg>
                 </button>
                 <button id="translateButton" onclick="updatePlaneMode('translate')">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-move3d-icon lucide-move-3d"><path d="M5 3v16h16"/><path d="m5 19 6-6"/><path d="m2 6 3-3 3 3"/><path d="m18 16 3 3-3 3"/></svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                        class="lucide lucide-move3d-icon lucide-move-3d">
+                        <path d="M5 3v16h16" />
+                        <path d="m5 19 6-6" />
+                        <path d="m2 6 3-3 3 3" />
+                        <path d="m18 16 3 3-3 3" />
+                    </svg>
                 </button>
                 <button id="rotateButton" onclick="updatePlaneMode('rotate')">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-rotate3d-icon lucide-rotate-3d"><path d="M16.466 7.5C15.643 4.237 13.952 2 12 2 9.239 2 7 6.477 7 12s2.239 10 5 10c.342 0 .677-.069 1-.2"/><path d="m15.194 13.707 3.814 1.86-1.86 3.814"/><path d="M19 15.57c-1.804.885-4.274 1.43-7 1.43-5.523 0-10-2.239-10-5s4.477-5 10-5c4.838 0 8.873 1.718 9.8 4"/></svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                        class="lucide lucide-rotate3d-icon lucide-rotate-3d">
+                        <path
+                            d="M16.466 7.5C15.643 4.237 13.952 2 12 2 9.239 2 7 6.477 7 12s2.239 10 5 10c.342 0 .677-.069 1-.2" />
+                        <path d="m15.194 13.707 3.814 1.86-1.86 3.814" />
+                        <path
+                            d="M19 15.57c-1.804.885-4.274 1.43-7 1.43-5.523 0-10-2.239-10-5s4.477-5 10-5c4.838 0 8.873 1.718 9.8 4" />
+                    </svg>
                 </button>
             </div>
         </div>
 
         <!-- container for interactive transfer function -->
         <div id="tfContainer">
+            <input type="color" id="pointColorPicker">
             <div id="histogram">
             </div>
         </div>

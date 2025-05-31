@@ -60,8 +60,13 @@ function rgbArrayToHex(rgb) {
     );
 }
 
+/**
+ * 
+ * @param {string} hex 
+ * @returns {number[]} 
+ */
 function hexToRgbArray(hex) {
-    return rgbToArray(hexToRgb(hex));
+    return rgbToArray(hexToRgb(hex.toLocaleLowerCase()));
 }
 
 function rgbToArray(rgb) {

@@ -26,6 +26,8 @@ let raycastMesh = null;
 let planeControls = null;
 let planeControlsObject = null;
 
+let isoSurfacePoints = [];
+
 /**
  * Load all data and initialize UI here.
  */
@@ -50,6 +52,9 @@ function init() {
 
     // initialize histogram
     createHistogram("histogram", 100);
+
+    // initialize iso points list
+    renderIsoPointsList();
 
     if (fileInput.files[0]) {
         readFile();
@@ -203,6 +208,15 @@ function updateShaderInput(settings) {
                 settings.backgroundColor[1],
                 settings.backgroundColor[2]
             );
+
+        renderer.setClearColor(
+            new THREE.Color().setRGB(
+                settings.backgroundColor[0],
+                settings.backgroundColor[1],
+                settings.backgroundColor[2]
+            ),
+            1
+        );
     }
 
     if (raycastShader.material.uniforms.uForegroundColor) {
@@ -215,35 +229,130 @@ function updateShaderInput(settings) {
     }
 
 
-    raycastShader.setUniform(
-        "uCuttingPlanePosition",
-        new THREE.Vector3(
-            settings.cuttingPlanePosition[0],
-            settings.cuttingPlanePosition[1],
-            settings.cuttingPlanePosition[2],
-        )
-    );
 
-    raycastShader.setUniform(
-        "uCuttingPlaneRotation",
-        new THREE.Vector3(
-            settings.cuttingPlaneRotation[0],
-            settings.cuttingPlaneRotation[1],
-            settings.cuttingPlaneRotation[2],
-        )
-    );
+    if (settings.cuttingPlanePosition) {
+        raycastShader.setUniform(
+            "uCuttingPlanePosition",
+            new THREE.Vector3(
+                settings.cuttingPlanePosition[0],
+                settings.cuttingPlanePosition[1],
+                settings.cuttingPlanePosition[2],
+            )
+        );
+    }
 
-    renderer.setClearColor(
-        new THREE.Color().setRGB(
-            settings.backgroundColor[0],
-            settings.backgroundColor[1],
-            settings.backgroundColor[2],
-        ),
-        1
-    );
+    if (settings.cuttingPlaneRotation) {
+        raycastShader.setUniform(
+            "uCuttingPlaneRotation",
+            new THREE.Vector3(
+                settings.cuttingPlaneRotation[0],
+                settings.cuttingPlaneRotation[1],
+                settings.cuttingPlaneRotation[2],
+            )
+        );
+    }
+
+    if (settings.backgroundColor) {
+        renderer.setClearColor(
+            new THREE.Color().setRGB(
+                settings.backgroundColor[0],
+                settings.backgroundColor[1],
+                settings.backgroundColor[2],
+            ),
+            1
+        );
+    }
+
+    updateTransferFunctionUniforms();
+}
+
+/**
+ * 
+ * @param {{x: number, y: number, color: string}[]} isoPoints 
+ */
+function setIsoPoints(isoPoints) {
+    if (!isoPoints || !Array.isArray(isoPoints)) {
+        console.error("Invalid isoPoints array provided.");
+        return;
+    }
+
+    isoSurfacePoints = isoPoints;
+}
+
+/**
+ * Update the transfer function uniforms based on the provided isosurface points.
+ */
+function updateTransferFunctionUniforms() {
+    // --- Update Transfer Function Uniforms ---
+    const MAX_ISO_POINTS_JS = 4; // Must match shader and RaycastShader class
+    const numPoints = Math.min(isoSurfacePoints.length, MAX_ISO_POINTS_JS);
+
+    raycastShader.setUniform("uNumIsoPoints", numPoints);
+
+    const isoValues = new Array(MAX_ISO_POINTS_JS).fill(1.0);
+    const isoOpacities = new Array(MAX_ISO_POINTS_JS).fill(1.0);
+    const isoColors = new Array(MAX_ISO_POINTS_JS).fill(new THREE.Vector3(0, 0, 0)); // This is an array of THREE.Vector3
+
+    // Sort points by iso-value (density) - important for some TF evaluation strategies,
+    // though for simple isosurfaces it might not be strictly necessary for the current shader.
+    // Good practice though.
+    const sortedPoints = [...isoSurfacePoints].sort((a, b) => a.x - b.x);
+
+    for (let idx = 0; idx < MAX_ISO_POINTS_JS; idx++) {
+        if (idx < numPoints) {
+            const point = sortedPoints[idx];
+            isoValues[idx] = point.x;    // iso-value (density)
+            isoOpacities[idx] = point.y; // opacity
+            // point.color is assumed to be [r, g, b] array from hexToRgbArray
+            isoColors[idx] = new THREE.Vector3(
+                point.color[0],
+                point.color[1],
+                point.color[2]
+            );
+            // console.log("Point color [", idx, "]:", point.color, isoColors);
+            raycastShader.setUniform(
+                "uIsoValues",
+                isoValues
+            );
+            raycastShader.setUniform(
+                "uIsoOpacities",
+                isoOpacities
+            );
+            raycastShader.setUniform(
+                "uIsoColors",
+                isoColors
+            );
+        } else {
+            // Pad unused slots if necessary (e.g., with non-contributing values)
+            isoValues[idx] = -1.0; // Or some other out-of-range value
+            isoOpacities[idx] = 0.0;
+            isoColors[idx] = new THREE.Vector3(0, 0, 0);
+
+            raycastShader.setUniform(
+                "uIsoValues",
+                isoValues
+            );
+            raycastShader.setUniform(
+                "uIsoOpacities",
+                isoOpacities
+            );
+            raycastShader.setUniform(
+                "uIsoColors",
+                isoColors
+            );
+        }
+    }
+
+    // Update the uIsoRange using the current iso-range value
+    if (typeof currentIsoRange !== 'undefined') {
+        raycastShader.setUniform("uIsoRange", currentIsoRange);
+    } else {
+        raycastShader.setUniform("uIsoRange", 0.05); // Default value
+    }
 
     requestAnimationFrame(paint);
 }
+
 
 /**
  * Set the auto-rotate property of the orbit camera.

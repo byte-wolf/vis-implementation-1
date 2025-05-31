@@ -24,12 +24,12 @@ function updateHistogram(volume) {
     const container = d3.select(`#${containerId}`);
     const containerRect = container.node().getBoundingClientRect();
 
-    console.log("height", height);
+    // console.log("height", height);
 
     const innerWidth = width - MARGIN.left - MARGIN.right;
     const innerHeight = height - MARGIN.top - MARGIN.bottom;
 
-    console.log("innerHeight", innerHeight);
+    // console.log("innerHeight", innerHeight);
 
     const inner = container.select("svg").select("g");
 
@@ -55,19 +55,19 @@ function updateHistogram(volume) {
         .scalePow()
         .exponent(yAxisScale)
         .domain([0, maxValue])
-        .range([innerHeight, 0]);
+        .range([0, innerHeight]);
 
     noDataGroup.style("display", "none");
 
     inner
-        .selectAll("rect")
+        .selectAll("rect.histogram-bar")
         .data(bins, (d, idx) => idx)
         .join("rect")
+        .attr("class", "histogram-bar")
         .transition()
         .duration(800)
-        .attr("y", (d) => yScale(d.length || 0))
         .attr("height", (d) =>
-            Math.max(0, innerHeight - yScale(d.length || 0))
+            yScale(d.length || 0)
         );
 }
 
@@ -86,17 +86,17 @@ function createHistogram(targetId, numBins = 100) {
     const containerRect = container.node().getBoundingClientRect();
 
     width = containerRect.width;
-    height = containerRect.height;
-    console.log("height", height);
+    height = containerRect.height / 2;
+    // console.log("height", height);
 
     const innerWidth = width - MARGIN.left - MARGIN.right;
     const innerHeight = height - MARGIN.top - MARGIN.bottom;
-    console.log("innerHeight", innerHeight);
+    // console.log("innerHeight", innerHeight);
 
     const svg = container
         .append("svg")
         .attr("width", width)
-        .attr("height", height);
+        .attr("height", height * 2);
 
     const inner = svg
         .append("g")
@@ -119,8 +119,9 @@ function createHistogram(targetId, numBins = 100) {
 
     // Y Axis
     const y = d3
-        .scalePow()
-        .exponent(yAxisScale)
+        .scaleLinear()
+        /* .scalePow()
+        .exponent(yAxisScale) */
         .domain([0, 1])
         .range([innerHeight, 0]);
     inner
@@ -134,13 +135,14 @@ function createHistogram(targetId, numBins = 100) {
         .attr("x", -MARGIN.top)
         .attr("y", MARGIN.left / 2)
         .style("font-size", "12px")
-        .text("frequency");
+        .text("intensity");
 
     // Bars
     inner
-        .selectAll("rect")
+        .selectAll("rect.histogram-bar")
         .data(d3.range(binCount), (d, idx) => idx)
         .join("rect")
+        .attr("class", "histogram-bar")
         .attr("x", (d) => x(d / binCount) + 1)
         .attr("y", (d) => innerHeight)
         .attr("width", (d) =>
@@ -159,6 +161,8 @@ function createHistogram(targetId, numBins = 100) {
         .attr("text-anchor", "middle")
         .attr("dominant-baseline", "middle")
         .text("No data");
+
+    drawInteractivePoints(inner, x, y);
 }
 
 function updateYAxisScale(value) {
@@ -172,8 +176,9 @@ function updateYAxisScale(value) {
     const innerHeight = height - MARGIN.top - MARGIN.bottom;
 
     const y = d3
-        .scalePow()
-        .exponent(yAxisScale)
+        .scaleLinear()
+        /* .scalePow()
+        .exponent(yAxisScale) */
         .domain([0, 1])
         .range([innerHeight, 0]);
 
