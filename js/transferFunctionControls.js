@@ -253,6 +253,23 @@ function renderIsoPointsList() {
 
         container.appendChild(pointItem);
     });
+
+    // Update the add button state based on the current number of points
+    const addButton = document.querySelector('.iso-point-add-button');
+    const pointsCount = document.getElementById('isoPointsCount');
+
+    if (addButton) {
+        if (interactivePoints.length >= 5) {
+            addButton.disabled = true;
+        } else {
+            addButton.disabled = false;
+        }
+        addButton.textContent = 'Add Point';
+    }
+
+    if (pointsCount) {
+        pointsCount.textContent = `${interactivePoints.length}/5`;
+    }
 }
 
 // Function to renumber all points sequentially
@@ -264,6 +281,10 @@ function renumberIsoPoints() {
 
 // Function to add a new iso point
 function addIsoPoint() {
+    if (interactivePoints.length >= 5) {
+        return;
+    }
+
     // Generate a unique ID
     const newId = 'iso' + (Date.now() % 10000);
 
