@@ -39,54 +39,6 @@ uniform int uRenderMode;
 
 out vec4 fragColor;
 
-vec4 applyTransferFunction(float density) {
-    vec4 accumulatedColor = vec4(0.0); // Start with transparent black
-
-    for(int idx = 0; idx < uNumIsoPoints; ++idx) {
-        if(idx >= MAX_ISO_POINTS)
-            break; // Should not happen if uNumIsoPoints is correct
-
-        float isoVal = uIsoValues[idx];
-        float pointOpacity = uIsoOpacities[idx];
-        vec3 pointColor = uIsoColors[idx];
-
-        // Calculate how close the density is to the current iso-value
-        // This determines the "strength" of this isosurface's contribution
-        // A simple triangular or Gaussian falloff can be used.
-        // 'uIsoRange' defines the "thickness" or influence of the isosurface.
-        float dist = abs(density - isoVal);
-        float intensity = 0.0;
-
-        if(dist < uIsoRange) {
-            intensity = 1.0 - (dist / uIsoRange); // Linear falloff
-            // intensity = exp(-(dist * dist) / (2.0 * uIsoRange * uIsoRange)); // Gaussian-like
-        }
-
-        //Im applyTransferFunction, zum Testen für den ersten Iso-Punkt:
-        /* if (idx == 0 && intensity > 0.0) {
-            return vec4(pointColor, intensity); // Zeige Rot mit Intensität des ersten Punkts
-            return vec4(1, 0, 0, intensity); // Zeige Rot mit Intensität des ersten Punkts
-        }
-        if (idx == 1 && intensity > 0.0) {
-            return vec4(uIsoColors[idx], intensity); // Zeige Rot mit Intensität des ersten Punkts
-            return vec4(0, 1, 0, intensity); // Zeige Grün mit Intensität des zweiten Punkts
-        } */
-
-        if(intensity > 0.0) {
-            vec4 currentColor = vec4(pointColor, pointOpacity * intensity);
-            // Alpha blending (front-to-back for ray marching)
-            accumulatedColor.rgb += (1.0 - accumulatedColor.a) * currentColor.a * currentColor.rgb;
-            accumulatedColor.a += (1.0 - accumulatedColor.a) * currentColor.a;
-
-            // Optimization: if fully opaque, can stop early for this ray segment
-            if(accumulatedColor.a >= 0.99) {
-                break;
-            }
-        }
-    }
-    return accumulatedColor;
-}
-
 // https://tavianator.com/2011/ray_box.html
 bool intersectBox(vec3 rayOrigin, vec3 rayDirection, out float tMin, out float tMax) {
     vec3 boxMin = -uVolumeSize * 0.5;
@@ -104,6 +56,57 @@ bool intersectBox(vec3 rayOrigin, vec3 rayDirection, out float tMin, out float t
     tMax = min(min(t2.x, t2.y), t2.z);
 
     return tMin < tMax && tMax > 0.0;
+}
+
+vec4 applyTransferFunction(float density) {
+    bool isoSurfaceFound = false;
+    vec4 accumulatedColor = vec4(0.0); // Start with transparent black
+
+    for(int idx = 0; idx < uNumIsoPoints; ++idx) {
+        if(idx >= MAX_ISO_POINTS)
+            break; // Should not happen if uNumIsoPoints is correct
+
+        float isoVal = uIsoValues[idx];
+        float pointOpacity = uIsoOpacities[idx];
+        vec3 pointColor = uIsoColors[idx];
+
+        if(!isoSurfaceFound) {
+            accumulatedColor.rgb = pointColor;
+        }
+
+        // Calculate how close the density is to the current iso-value
+        float dist = abs(density - isoVal);
+        float intensity = 0.0;
+
+        if(dist < uIsoRange) {
+            isoSurfaceFound = true;
+            intensity = 1.0 - (dist / uIsoRange); // Linear falloff
+            // intensity = exp(-(dist * dist) / (2.0 * uIsoRange * uIsoRange)); // Gaussian-like
+        }
+
+        //Im applyTransferFunction, zum Testen für den ersten Iso-Punkt:
+        /* if (idx == 0 && intensity > 0.0) {
+            return vec4(pointColor, intensity); // Zeige Rot mit Intensität des ersten Punkts
+            return vec4(1, 0, 0, intensity); // Zeige Rot mit Intensität des ersten Punkts
+        }
+        if (idx == 1 && intensity > 0.0) {
+            return vec4(uIsoColors[idx], intensity); // Zeige Rot mit Intensität des ersten Punkts
+            return vec4(0, 1, 0, intensity); // Zeige Grün mit Intensität des zweiten Punkts
+        } */
+
+        if(intensity > 0.0) {
+            vec4 currentColor = vec4(pointColor, pointOpacity * intensity);
+            // Alpha blending (front-to-back for ray marching)
+            accumulatedColor.rgb = (1.0 - accumulatedColor.a) * currentColor.a * currentColor.rgb;
+            accumulatedColor.a += (1.0 - accumulatedColor.a) * currentColor.a;
+
+            // Optimization: if fully opaque, can stop early for this ray segment
+            if(accumulatedColor.a >= 0.99) {
+                break;
+            }
+        }
+    }
+    return accumulatedColor;
 }
 
 // Simple pseudo-random function for jittering
@@ -142,6 +145,7 @@ void maximumIntensityProjectionRender(vec3 rayOrigin, vec3 rayDirection, float t
     fragColor = vec4(mix(uBackgroundColor, uForegroundColor, maxIntensity), 1.0);
 }
 
+// https://developer.nvidia.com/gpugems/gpugems/part-vi-beyond-triangles/chapter-39-volume-rendering-techniques
 void transferFunctionRender(vec3 rayOrigin, vec3 rayDirection, float tMin, float tMax, float dt) {
     vec4 accumulatedColor = vec4(uBackgroundColor, 0.0);
 
@@ -181,7 +185,7 @@ void transferFunctionRender(vec3 rayOrigin, vec3 rayDirection, float tMin, float
     }
 
     vec3 finalRgb = mix(uBackgroundColor, accumulatedColor.rgb, accumulatedColor.a);
-    fragColor = vec4(finalRgb, accumulatedColor.a);
+    fragColor = vec4(accumulatedColor.rgb, 1.0);
 }
 
 void main() {
