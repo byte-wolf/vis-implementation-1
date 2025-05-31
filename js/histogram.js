@@ -24,12 +24,12 @@ function updateHistogram(volume) {
     const container = d3.select(`#${containerId}`);
     const containerRect = container.node().getBoundingClientRect();
 
-    console.log("height", height);
+    // console.log("height", height);
 
     const innerWidth = width - MARGIN.left - MARGIN.right;
     const innerHeight = height - MARGIN.top - MARGIN.bottom;
 
-    console.log("innerHeight", innerHeight);
+    // console.log("innerHeight", innerHeight);
 
     const inner = container.select("svg").select("g");
 
@@ -60,9 +60,10 @@ function updateHistogram(volume) {
     noDataGroup.style("display", "none");
 
     inner
-        .selectAll("rect")
+        .selectAll("rect.histogram-bar")
         .data(bins, (d, idx) => idx)
         .join("rect")
+        .attr("class", "histogram-bar")
         .transition()
         .duration(800)
         .attr("height", (d) =>
@@ -86,11 +87,11 @@ function createHistogram(targetId, numBins = 100) {
 
     width = containerRect.width;
     height = containerRect.height / 2;
-    console.log("height", height);
+    // console.log("height", height);
 
     const innerWidth = width - MARGIN.left - MARGIN.right;
     const innerHeight = height - MARGIN.top - MARGIN.bottom;
-    console.log("innerHeight", innerHeight);
+    // console.log("innerHeight", innerHeight);
 
     const svg = container
         .append("svg")
@@ -138,9 +139,10 @@ function createHistogram(targetId, numBins = 100) {
 
     // Bars
     inner
-        .selectAll("rect")
+        .selectAll("rect.histogram-bar")
         .data(d3.range(binCount), (d, idx) => idx)
         .join("rect")
+        .attr("class", "histogram-bar")
         .attr("x", (d) => x(d / binCount) + 1)
         .attr("y", (d) => innerHeight)
         .attr("width", (d) =>
@@ -160,7 +162,7 @@ function createHistogram(targetId, numBins = 100) {
         .attr("dominant-baseline", "middle")
         .text("No data");
 
-        drawInteractivePoints(inner, x, y);
+    drawInteractivePoints(inner, x, y);
 }
 
 function updateYAxisScale(value) {

@@ -52,6 +52,9 @@ function init() {
     // initialize histogram
     createHistogram("histogram", 100);
 
+    // initialize iso points list
+    renderIsoPointsList();
+
     if (fileInput.files[0]) {
         readFile();
     }
@@ -278,18 +281,15 @@ function updateTransferFunctionUniforms() {
     const numPoints = Math.min(isoSurfacePoints.length, MAX_ISO_POINTS_JS);
 
     raycastShader.setUniform("uNumIsoPoints", numPoints);
-    console.log("Number of iso points:", numPoints);
 
     const isoValues = new Array(MAX_ISO_POINTS_JS).fill(1.0);
     const isoOpacities = new Array(MAX_ISO_POINTS_JS).fill(1.0);
-    const isoColors = new Array(MAX_ISO_POINTS_JS).fill(new THREE.Vector3(0,0,0)); // This is an array of THREE.Vector3
+    const isoColors = new Array(MAX_ISO_POINTS_JS).fill(new THREE.Vector3(0, 0, 0)); // This is an array of THREE.Vector3
 
     // Sort points by iso-value (density) - important for some TF evaluation strategies,
     // though for simple isosurfaces it might not be strictly necessary for the current shader.
     // Good practice though.
     const sortedPoints = [...isoSurfacePoints].sort((a, b) => a.x - b.x);
-
-    console.log("Sorted iso points:", sortedPoints);
 
     for (let idx = 0; idx < MAX_ISO_POINTS_JS; idx++) {
         if (idx < numPoints) {
@@ -302,7 +302,7 @@ function updateTransferFunctionUniforms() {
                 point.color[1],
                 point.color[2]
             );
-            console.log("Point color [", idx, "]:", point.color, isoColors);
+            // console.log("Point color [", idx, "]:", point.color, isoColors);
             raycastShader.setUniform(
                 "uIsoValues",
                 isoValues
@@ -336,13 +336,11 @@ function updateTransferFunctionUniforms() {
         }
     }
 
-    // Update the uIsoRange if you have an HTML input for it
-    const isoRangeInput = document.getElementById('isoRangeInput'); // Assuming you add one
-    if (isoRangeInput) {
-        raycastShader.setUniform(
-            "uIsoRange",
-            parseFloat(isoRangeInput.value) || 0.05
-        );
+    // Update the uIsoRange using the current iso-range value
+    if (typeof currentIsoRange !== 'undefined') {
+        raycastShader.setUniform("uIsoRange", currentIsoRange);
+    } else {
+        raycastShader.setUniform("uIsoRange", 0.05); // Default value
     }
 
     requestAnimationFrame(paint);

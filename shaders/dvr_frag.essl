@@ -25,15 +25,15 @@ uniform float uIsoOpacities[MAX_ISO_POINTS];
 uniform vec3 uIsoColors[MAX_ISO_POINTS];
 uniform float uIsoRange; // A small range around the iso-value to "catch" densities
 
-
 out vec4 fragColor;
 
 // --- Transfer Function Logic ---
 vec4 applyTransferFunction(float density) {
     vec4 accumulatedColor = vec4(0.0); // Start with transparent black
 
-    for (int idx = 0; idx < uNumIsoPoints; ++idx) {
-        if (idx >= MAX_ISO_POINTS) break; // Should not happen if uNumIsoPoints is correct
+    for(int idx = 0; idx < uNumIsoPoints; ++idx) {
+        if(idx >= MAX_ISO_POINTS)
+            break; // Should not happen if uNumIsoPoints is correct
 
         float isoVal = uIsoValues[idx];
         float pointOpacity = uIsoOpacities[idx];
@@ -46,7 +46,7 @@ vec4 applyTransferFunction(float density) {
         float dist = abs(density - isoVal);
         float intensity = 0.0;
 
-        if (dist < uIsoRange) {
+        if(dist < uIsoRange) {
             intensity = 1.0 - (dist / uIsoRange); // Linear falloff
             // intensity = exp(-(dist * dist) / (2.0 * uIsoRange * uIsoRange)); // Gaussian-like
         }
@@ -61,14 +61,14 @@ vec4 applyTransferFunction(float density) {
             return vec4(0, 1, 0, intensity); // Zeige Grün mit Intensität des zweiten Punkts
         } */
 
-        if (intensity > 0.0) {
+        if(intensity > 0.0) {
             vec4 currentColor = vec4(pointColor, pointOpacity * intensity);
             // Alpha blending (front-to-back for ray marching)
             accumulatedColor.rgb += (1.0 - accumulatedColor.a) * currentColor.a * currentColor.rgb;
             accumulatedColor.a += (1.0 - accumulatedColor.a) * currentColor.a;
 
             // Optimization: if fully opaque, can stop early for this ray segment
-            if (accumulatedColor.a >= 0.99) {
+            if(accumulatedColor.a >= 0.99) {
                 break;
             }
         }
@@ -95,6 +95,12 @@ bool intersectBox(vec3 rayOrigin, vec3 rayDirection, out float tMin, out float t
     return tMin < tMax && tMax > 0.0;
 }
 
+// Simple pseudo-random function for jittering
+float random(vec2 co) {
+    // Multiply by a large number and take the fractional part
+    return fract(sin(dot(co.xy, vec2(12.9898, 78.233))) * 43758.5453);
+}
+
 void main() {
     vec3 rayOrigin = uCameraPosition;
     vec3 rayDirection = normalize(vWorldPosition - rayOrigin);
@@ -102,64 +108,53 @@ void main() {
     float tMin, tMax;
     bool hit = intersectBox(rayOrigin, rayDirection, tMin, tMax);
 
-    if (!hit) {
+    if(!hit) {
         discard;
     }
 
     tMin = max(tMin, 0.0);
 
-    vec3 normalizedRayDirection = abs(rayDirection / uVolumeSize);
-    float maxNormalizedComponent = max(normalizedRayDirection.x, max(normalizedRayDirection.y, normalizedRayDirection.z));
+    float dt = 0.5; // Reduced step size for finer sampling
+    // Jitter the starting position of the ray by a random fraction of the step size
+    // This helps break up aliasing patterns that cause "onion rings"
+    // Use vWorldPosition (interpolated vertex world position) as a seed for randomness.
+    // gl_FragCoord.xy could also be used if vWorldPosition doesn't provide enough variation.
+    tMin += random(vWorldPosition.xy) * dt;
 
-    float assumedTextureResolution = 512.0; // Oder 256.0. Ein Kompromiss.
-    float dt;
-    if (maxNormalizedComponent > 0.00001) { // Vermeide Division durch Null
-         dt = (1.0 / assumedTextureResolution) / maxNormalizedComponent;
-    } else {
-         dt = min(uVolumeSize.x, min(uVolumeSize.y, uVolumeSize.z)) / assumedTextureResolution;
-    }
+    vec4 accumulatedColor = vec4(0.0, 0.0, 0.0, 0.0);
 
-    float minAllowedStep = length(uVolumeSize) / 1024.0; // Nicht mehr als ~1000 Schritte durch die Diagonale
-    float maxAllowedStep = length(uVolumeSize) / 64.0;   // Nicht weniger als ~60 Schritte durch die Diagonale
-    dt = clamp(dt, minAllowedStep, maxAllowedStep);
-
-    //float dt = 0.5;
-    vec4 accumulatedColor = vec4(0.0, 0.0, 0.0, 0.0); 
-
-    for (float t = tMin; t < tMax; t += dt) {
+    for(float t = tMin; t < tMax; t += dt) {
         vec3 currentPos = rayOrigin + rayDirection * t;
 
         float d = dot(currentPos - uCuttingPlanePosition, uCuttingPlaneRotation);
 
-        if (d == 0.0) {
-            discard;
-            // maxIntensity = 1.0; // Skip points on the plane
-            // break;
-        } else if (d < 0.0) {
+        if(d == 0.0) {
+            continue;
+        } else if(d < 0.0) {
             continue; // Skip points behind the plane
         }
 
         vec3 textureCoord = (currentPos / uVolumeSize) + 0.5;
 
-        if (all(greaterThanEqual(textureCoord, vec3(0.0))) && all(lessThanEqual(textureCoord, vec3(1.0)))) {
+        if(all(greaterThanEqual(textureCoord, vec3(0.0))) && all(lessThanEqual(textureCoord, vec3(1.0)))) {
             float density = texture(uVolumeTexture, textureCoord).r;
 
             vec4 sampleColor = applyTransferFunction(density);
 
             // Front-to-back alpha compositing
-            if (sampleColor.a > 0.0) { // Only composite if the sample contributes
+            if(sampleColor.a > 0.0) { // Only composite if the sample contributes
                 accumulatedColor.rgb += (1.0 - accumulatedColor.a) * sampleColor.a * sampleColor.rgb;
                 accumulatedColor.a += (1.0 - accumulatedColor.a) * sampleColor.a;
             }
 
             // Early ray termination if fully opaque
-            if (accumulatedColor.a >= 1.0) {
+            if(accumulatedColor.a >= 1.0) {
                 break;
             }
         }
     }
 
-    if (accumulatedColor.a <= 0.01) { // If mostly transparent
+    if(accumulatedColor.a <= 0.01) { // If mostly transparent
         discard;
     }
 

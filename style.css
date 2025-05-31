@@ -9,7 +9,7 @@ body {
 
 .container {
     display: flex;
-    vertical-align:top;
+    vertical-align: top;
     gap: 15px;
     /*width: 100%;*/
     height: 50%;
@@ -18,22 +18,22 @@ body {
     border: 0px solid black;
 }
 
-#viewContainer{
+#viewContainer {
     flex: 2;
     border: 1px solid gray;
     border-radius: 5px;
     cursor: grab;
 }
 
-#viewContainer > canvas {
+#viewContainer>canvas {
     border-radius: 5px;
 }
 
-#tfContainer{
+#tfContainer {
     flex: 1;
 }
 
-.dot{
+.dot {
     height: 5px;
     width: 5px;
     border-radius: 50%;
@@ -53,7 +53,7 @@ form.ui-field-3 {
     gap: 10px;
 }
 
-form > .input-field {
+form>.input-field {
     display: flex;
     flex-direction: column;
     justify-content: start;
@@ -107,7 +107,8 @@ button.btn-secondary:hover {
     color: white;
 }
 
-button.btn-secondary:active, button.btn-primary:active {
+button.btn-secondary:active,
+button.btn-primary:active {
     transform: scale(0.95);
 }
 
@@ -149,7 +150,7 @@ input[type="file"] {
     gap: 6px;
 }
 
-.checkbox-field > label {
+.checkbox-field>label {
     margin-bottom: 0;
 }
 
@@ -165,12 +166,12 @@ h4 {
     gap: 15px;
 }
 
-.settings-view > div {
+.settings-view>div {
     display: flex;
     flex-direction: column;
 }
 
-.settings-view > div > .ui-field {
+.settings-view>div>.ui-field {
     flex: 1;
 }
 
@@ -230,20 +231,108 @@ h4 {
     gap: 4px;
 }
 
-.inline-controls > button {
+.inline-controls>button {
     background-color: #00000000;
     color: white;
     padding: 4px;
 }
 
-.inline-controls > button:hover {
+.inline-controls>button:hover {
     color: #aaaaaa;
 }
 
-.inline-controls > button.active {
+.inline-controls>button.active {
     color: #6da0ff;
 }
 
-.inline-controls > button.active:hover {
+.inline-controls>button.active:hover {
     color: #4478d8;
+}
+
+#pointColorPicker {
+    position: absolute;
+    visibility: hidden;
+    width: 10px;
+}
+
+/* Iso Points Styles */
+.iso-points-controls {
+    display: flex;
+    flex-direction: column;
+    align-items: start;
+    gap: 10px;
+}
+
+.iso-points-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.iso-point-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 4px 6px;
+    background-color: #2e2e2e;
+    border-radius: 5px;
+    border: 1px solid #555;
+    gap: 15px;
+}
+
+.iso-point-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 1;
+}
+
+.iso-point-color {
+    width: 16px;
+    height: 16px;
+    border-radius: 5px;
+    /* border: 2px solid rgb(129, 129, 129); */
+}
+
+.iso-point-label {
+    font-size: 12px;
+    font-weight: bold;
+}
+
+.iso-point-coords {
+    font-size: 11px;
+    color: #aaa;
+}
+
+.iso-point-remove {
+    background-color: #d32f2f;
+    color: white;
+    padding: 2px 6px;
+    font-size: 11px;
+    border-radius: 3px;
+}
+
+.iso-point-remove:hover {
+    background-color: #f44336;
+}
+
+.iso-point-remove:disabled {
+    background-color: #666;
+    color: #999;
+    cursor: not-allowed;
+}
+
+.iso-point-remove:disabled:hover {
+    background-color: #666;
+}
+
+.iso-point-info-container {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.iso-point-add-button {
+    width: auto;
+    padding: 4px 12px;
 }
