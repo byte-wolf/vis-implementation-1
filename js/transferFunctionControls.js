@@ -36,8 +36,18 @@ function drawInteractivePoints(svgInner, xScale, yScale) {
                 const group = enter.append('g')
                     .attr('class', 'iso-range-group');
 
+                // Add rectangle for binary mode
                 group.append('rect')
-                    .attr('class', 'iso-range-indicator')
+                    .attr('class', 'iso-range-indicator-rect')
+                    .style('fill', d => d.color)
+                    .style('opacity', 0.15)
+                    .style('stroke', d => d.color)
+                    .style('stroke-width', 1)
+                    .style('stroke-opacity', 0.3);
+
+                // Add triangle/polygon for linear mode
+                group.append('polygon')
+                    .attr('class', 'iso-range-indicator-triangle')
                     .style('fill', d => d.color)
                     .style('opacity', 0.15)
                     .style('stroke', d => d.color)
@@ -50,7 +60,11 @@ function drawInteractivePoints(svgInner, xScale, yScale) {
 
     // Function to update range indicators
     function updateRangeIndicators(selection) {
-        selection.select('.iso-range-indicator')
+        // Get current falloff mode (0: linear, 1: binary)
+        const isLinearMode = (typeof isoFalloffMode !== 'undefined') ? isoFalloffMode === 0 : true;
+
+        // Update rectangle (for binary mode)
+        const rect = selection.select('.iso-range-indicator-rect')
             .attr('x', d => {
                 const leftBound = Math.max(0, xScale(d.x - currentIsoRange));
                 return leftBound;
@@ -61,7 +75,22 @@ function drawInteractivePoints(svgInner, xScale, yScale) {
                 const rightBound = Math.min(xScale.range()[1], xScale(d.x + currentIsoRange));
                 return Math.max(0, rightBound - leftBound);
             })
-            .attr('height', d => yScale.range()[0] - yScale(d.y)); // Height from point to bottom
+            .attr('height', d => yScale.range()[0] - yScale(d.y)) // Height from point to bottom
+            .style('display', isLinearMode ? 'none' : 'block');
+
+        // Update triangle (for linear mode)
+        const triangle = selection.select('.iso-range-indicator-triangle')
+            .attr('points', d => {
+                const pointX = xScale(d.x);
+                const pointY = yScale(d.y);
+                const leftBound = Math.max(0, xScale(d.x - currentIsoRange));
+                const rightBound = Math.min(xScale.range()[1], xScale(d.x + currentIsoRange));
+                const bottomY = yScale.range()[0];
+
+                // Create triangle points: peak at iso point, base at bottom
+                return `${pointX},${pointY} ${leftBound},${bottomY} ${rightBound},${bottomY}`;
+            })
+            .style('display', isLinearMode ? 'block' : 'none');
     }
 
     // Apply initial range indicators
@@ -110,15 +139,20 @@ function drawInteractivePoints(svgInner, xScale, yScale) {
             // Find the corresponding SVG group and update its visuals
             svgInner.selectAll('.interactive-point-group')
                 .filter(d_svg => d_svg.id === pointToColor.id)
-                .each(function (d_svg) { // 'this' is the <g> element
+                .each(function () {
                     d3.select(this).select('circle').style('fill', pointToColor.color);
                 });
 
             svgInner.selectAll('.iso-range-group')
                 .filter(d_svg => d_svg.id === pointToColor.id)
-                .select('.iso-range-indicator')
-                .style('fill', pointToColor.color)
-                .style('stroke', pointToColor.color);
+                .each(function () {
+                    d3.select(this).select('.iso-range-indicator-rect')
+                        .style('fill', pointToColor.color)
+                        .style('stroke', pointToColor.color);
+                    d3.select(this).select('.iso-range-indicator-triangle')
+                        .style('fill', pointToColor.color)
+                        .style('stroke', pointToColor.color);
+                });
 
             onPointUpdate();
         }
@@ -192,6 +226,14 @@ function drawInteractivePoints(svgInner, xScale, yScale) {
             updateRangeIndicators(currentRangeGroup);
         }
     };
+
+    window.updateRangeIndicatorFalloffMode = function () {
+        if (window.svgInner) {
+            const rangeContainer = window.svgInner.select('.iso-ranges-container');
+            const currentRangeGroup = rangeContainer.selectAll('.iso-range-group');
+            updateRangeIndicators(currentRangeGroup);
+        }
+    };
 }
 
 // Helper clamp function
@@ -214,6 +256,11 @@ function onPointUpdate() {
 
     // Update the iso points list UI
     renderIsoPointsList();
+
+    // Update range indicators with current falloff mode
+    if (window.updateRangeIndicatorFalloffMode) {
+        window.updateRangeIndicatorFalloffMode();
+    }
 }
 
 function renderIsoPointsList() {
@@ -348,7 +395,6 @@ function removeIsoPoint(pointId) {
     }
 }
 
-// Function to update iso-range value and visual representation
 function updateIsoRange(value) {
     currentIsoRange = parseFloat(value);
 
@@ -356,11 +402,9 @@ function updateIsoRange(value) {
     document.getElementById("isoRangeValue").value = currentIsoRange;
     document.getElementById("isoRangeInput").value = currentIsoRange;
 
-    // Update visual indicators if they exist
     if (window.updateRangeIndicators) {
         window.updateRangeIndicators();
     }
 
-    // Update shader uniforms
     updateTransferFunctionUniforms();
 }

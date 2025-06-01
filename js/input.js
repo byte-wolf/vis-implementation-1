@@ -102,6 +102,9 @@ function loadInput() {
     const autoRotateInput = document.getElementById("auto-rotate");
     onAutoRotateChange(autoRotateInput.checked);
 
+    const isoSurfaceRangeInput = document.getElementById("isoRangeValue");
+    updateIsoRange(parseFloat(isoSurfaceRangeInput.value));
+
     const isoFalloffModeInput = document.querySelector("input[name='isoFalloffMode']:checked");
     updateIsoFalloffMode(parseInt(isoFalloffModeInput.value));
 
@@ -133,7 +136,7 @@ function resetInputSettings() {
     // Update visibility and apply settings immediately
     updateForegroundColorVisibility();
     updateCuttingPlaneControlsVisibility();
-    updateShaderInput({ backgroundColor, foregroundColor, cuttingPlanePosition, cuttingPlaneRotation, renderMode, cuttingPlaneEnabled, cuttingPlaneFlipped });
+    updateShaderInput({ backgroundColor, foregroundColor, cuttingPlanePosition, cuttingPlaneRotation, renderMode, cuttingPlaneEnabled, cuttingPlaneFlipped, isoFalloffMode });
 }
 
 function updateBackground(color) {
@@ -276,5 +279,10 @@ function updatePlaneMode(planeMode) {
 
 function updateIsoFalloffMode(value) {
     isoFalloffMode = parseInt(value);
-    updateTransferFunctionUniforms({ isoFalloffMode });
+    updateShaderInput({ isoFalloffMode });
+
+    // Update range indicator visualization if available
+    if (window.updateRangeIndicatorFalloffMode) {
+        window.updateRangeIndicatorFalloffMode();
+    }
 }

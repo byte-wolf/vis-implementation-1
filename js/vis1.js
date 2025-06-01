@@ -199,7 +199,7 @@ function paint() {
 /**
  * Update the values based on user input.
  *
- * @param {{ backgroundColor?: number[], foregroundColor: number[], renderMode?: number, cuttingPlaneEnabled?: boolean, cuttingPlaneFlipped?: boolean}} settings - The settings object containing input values.
+ * @param {{ backgroundColor?: number[], foregroundColor: number[], renderMode?: number, cuttingPlaneEnabled?: boolean, cuttingPlaneFlipped?: boolean, isoFalloffMode?: number}} settings - The settings object containing input values.
  */
 function updateShaderInput(settings) {
     if (!raycastShader) {
@@ -269,6 +269,10 @@ function updateShaderInput(settings) {
         );
     }
 
+    if (settings.isoFalloffMode !== undefined) {
+        raycastShader.setUniform("uIsoFalloffMode", settings.isoFalloffMode);
+    }
+
     if (settings.backgroundColor !== undefined) {
         renderer.setClearColor(
             new THREE.Color().setRGB(
@@ -298,10 +302,8 @@ function setIsoPoints(isoPoints) {
 
 /**
  * Update the transfer function uniforms based on the provided isosurface points.
- * 
- * @param {{ isoFalloffMode?: number } | undefined} settings 
  */
-function updateTransferFunctionUniforms(settings) {
+function updateTransferFunctionUniforms() {
     // --- Update Transfer Function Uniforms ---
     const MAX_ISO_POINTS_JS = 4; // Must match shader and RaycastShader class
     const numPoints = Math.min(isoSurfacePoints.length, MAX_ISO_POINTS_JS);
@@ -365,11 +367,6 @@ function updateTransferFunctionUniforms(settings) {
     // Update the uIsoRange using the current iso-range value
     if (currentIsoRange !== undefined) {
         raycastShader.setUniform("uIsoRange", currentIsoRange);
-    }
-
-    // Update the uIsoFalloffMode using the current falloff mode value
-    if (isoFalloffMode !== undefined) {
-        raycastShader.setUniform("uIsoFalloffMode", isoFalloffMode);
     }
 
     requestAnimationFrame(paint);
