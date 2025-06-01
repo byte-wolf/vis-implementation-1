@@ -133,7 +133,7 @@ function resetInputSettings() {
 
 function updateBackground(color) {
     backgroundColor = hexToRgbArray(color);
-    updateShaderInput({ backgroundColor, foregroundColor, cuttingPlanePosition, cuttingPlaneRotation, renderMode, cuttingPlaneEnabled, cuttingPlaneFlipped });
+    updateShaderInput({ backgroundColor });
 }
 
 function updateForeground(color) {
@@ -153,7 +153,7 @@ function updateCuttingPlane(position, rotation) {
         rotation.z,
     ];
 
-    updateShaderInput({ backgroundColor, foregroundColor, cuttingPlanePosition, cuttingPlaneRotation, renderMode, cuttingPlaneEnabled, cuttingPlaneFlipped });
+    updateShaderInput({ cuttingPlanePosition, cuttingPlaneRotation });
 }
 
 function updateRenderMode(mode) {
@@ -161,7 +161,7 @@ function updateRenderMode(mode) {
     // Update visibility and apply immediately
     updateForegroundColorVisibility();
     updateCuttingPlaneControlsVisibility();
-    updateShaderInput({ backgroundColor, foregroundColor, cuttingPlanePosition, cuttingPlaneRotation, renderMode, cuttingPlaneEnabled, cuttingPlaneFlipped });
+    updateShaderInput({ renderMode });
 }
 
 function rgbArrayToHex(rgb) {
@@ -206,10 +206,6 @@ function rgbToHex(r, g, b) {
     return "#" + componentToHex(r) + componentToHex(g) + componentToHex(b);
 }
 
-function submitData() {
-    updateShaderInput({ backgroundColor, foregroundColor, cuttingPlanePosition, cuttingPlaneRotation, renderMode, cuttingPlaneEnabled, cuttingPlaneFlipped });
-}
-
 function onAutoRotateChange(value) {
     setAutoRotate(value);
 }
@@ -234,12 +230,13 @@ function onCuttingPlaneEnabledChange(enabled) {
 
     // Update visibility and apply immediately
     updateCuttingPlaneControlsVisibility();
-    updateShaderInput({ backgroundColor, foregroundColor, cuttingPlanePosition, cuttingPlaneRotation, renderMode, cuttingPlaneEnabled, cuttingPlaneFlipped });
+    updateShaderInput({ cuttingPlaneEnabled });
 }
 
 function onCuttingPlaneFlippedChange(flipped) {
+    console.log("onCuttingPlaneFlippedChange", flipped);
     cuttingPlaneFlipped = flipped;
-    updateShaderInput({ backgroundColor, foregroundColor, cuttingPlanePosition, cuttingPlaneRotation, renderMode, cuttingPlaneEnabled, cuttingPlaneFlipped });
+    updateShaderInput({ cuttingPlaneFlipped, cuttingPlaneRotation });
 }
 
 /**
