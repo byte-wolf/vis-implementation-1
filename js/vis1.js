@@ -206,7 +206,7 @@ function updateShaderInput(settings) {
         return;
     }
 
-    if (raycastShader.material.uniforms.uBackgroundColor) {
+    if (settings.backgroundColor !== undefined) {
         raycastShader.material.uniforms.uBackgroundColor.value =
             new THREE.Vector3(
                 settings.backgroundColor[0],
@@ -224,7 +224,7 @@ function updateShaderInput(settings) {
         );
     }
 
-    if (raycastShader.material.uniforms.uForegroundColor) {
+    if (settings.foregroundColor !== undefined) {
         raycastShader.material.uniforms.uForegroundColor.value =
             new THREE.Vector3(
                 settings.foregroundColor[0],
@@ -247,7 +247,7 @@ function updateShaderInput(settings) {
         isCuttingPlaneFlipped = settings.cuttingPlaneFlipped;
     }
 
-    if (settings.cuttingPlanePosition) {
+    if (settings.cuttingPlanePosition !== undefined) {
         raycastShader.setUniform(
             "uCuttingPlanePosition",
             new THREE.Vector3(
@@ -258,7 +258,7 @@ function updateShaderInput(settings) {
         );
     }
 
-    if (settings.cuttingPlaneRotation) {
+    if (settings.cuttingPlaneRotation !== undefined) {
         raycastShader.setUniform(
             "uCuttingPlaneRotation",
             new THREE.Vector3(
@@ -269,7 +269,7 @@ function updateShaderInput(settings) {
         );
     }
 
-    if (settings.backgroundColor) {
+    if (settings.backgroundColor !== undefined) {
         renderer.setClearColor(
             new THREE.Color().setRGB(
                 settings.backgroundColor[0],
