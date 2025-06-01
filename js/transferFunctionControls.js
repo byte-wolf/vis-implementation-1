@@ -113,6 +113,13 @@ function drawInteractivePoints(svgInner, xScale, yScale) {
                 .each(function (d_svg) { // 'this' is the <g> element
                     d3.select(this).select('circle').style('fill', pointToColor.color);
                 });
+
+            svgInner.selectAll('.iso-range-group')
+                .filter(d_svg => d_svg.id === pointToColor.id)
+                .select('.iso-range-indicator')
+                .style('fill', pointToColor.color)
+                .style('stroke', pointToColor.color);
+
             onPointUpdate();
         }
     });
