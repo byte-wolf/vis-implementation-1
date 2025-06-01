@@ -55,13 +55,13 @@ function drawInteractivePoints(svgInner, xScale, yScale) {
                 const leftBound = Math.max(0, xScale(d.x - currentIsoRange));
                 return leftBound;
             })
-            .attr('y', 0) // Full height from top
+            .attr('y', d => yScale(d.y)) // Start from point's y position
             .attr('width', d => {
                 const leftBound = Math.max(0, xScale(d.x - currentIsoRange));
                 const rightBound = Math.min(xScale.range()[1], xScale(d.x + currentIsoRange));
                 return Math.max(0, rightBound - leftBound);
             })
-            .attr('height', yScale.range()[0]); // Full height of the chart
+            .attr('height', d => yScale.range()[0] - yScale(d.y)); // Height from point to bottom
     }
 
     // Apply initial range indicators

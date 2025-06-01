@@ -298,8 +298,10 @@ function setIsoPoints(isoPoints) {
 
 /**
  * Update the transfer function uniforms based on the provided isosurface points.
+ * 
+ * @param {{ isoFalloffMode?: number } | undefined} settings 
  */
-function updateTransferFunctionUniforms() {
+function updateTransferFunctionUniforms(settings) {
     // --- Update Transfer Function Uniforms ---
     const MAX_ISO_POINTS_JS = 4; // Must match shader and RaycastShader class
     const numPoints = Math.min(isoSurfacePoints.length, MAX_ISO_POINTS_JS);
@@ -361,10 +363,13 @@ function updateTransferFunctionUniforms() {
     }
 
     // Update the uIsoRange using the current iso-range value
-    if (typeof currentIsoRange !== 'undefined') {
+    if (currentIsoRange !== undefined) {
         raycastShader.setUniform("uIsoRange", currentIsoRange);
-    } else {
-        raycastShader.setUniform("uIsoRange", 0.05); // Default value
+    }
+
+    // Update the uIsoFalloffMode using the current falloff mode value
+    if (isoFalloffMode !== undefined) {
+        raycastShader.setUniform("uIsoFalloffMode", isoFalloffMode);
     }
 
     requestAnimationFrame(paint);

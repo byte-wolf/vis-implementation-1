@@ -175,6 +175,22 @@
                             oninput="updateIsoRange(this.value)">
                     </div>
                 </div>
+                <!-- iso falloff mode -->
+                <div class="input-field">
+                    <label>Iso-surface falloff mode</label>
+                    <div class="radio-input-group">
+                        <div class="radio-input">
+                            <input id="isoFalloffLinear" type="radio" name="isoFalloffMode" value="0" checked
+                                onchange="updateIsoFalloffMode(this.value)">
+                            <label for="isoFalloffLinear">Linear</label>
+                        </div>
+                        <div class="radio-input">
+                            <input id="isoFalloffBinary" type="radio" name="isoFalloffMode" value="1"
+                                onchange="updateIsoFalloffMode(this.value)">
+                            <label for="isoFalloffBinary">Binary</label>
+                        </div>
+                    </div>
+                </div>
             </form>
         </div>
 
@@ -196,7 +212,6 @@
     </div>
 
 
-
     <div class="container">
 
         <div class="structural-container">
@@ -212,6 +227,8 @@
             <div id="histogram">
             </div>
         </div>
+
+
 
     </div>
 

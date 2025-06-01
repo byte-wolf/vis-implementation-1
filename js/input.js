@@ -1,18 +1,20 @@
 // Render modes configuration
 const RENDER_MODES = {
     MAX_INTENSITY_PROJECTION: { value: 0, label: "Maximum Intensity Projection" },
-    TRANSFER_FUNCTION: { value: 1, label: "Transfer Function" },
-    TRANSFER_FUNCTION_OLD: { value: 2, label: "Transfer Function (Old)" }
+    MAX_INTENSITY_PROJECTION_TF: { value: 1, label: "Maximum Intensity Projection (TF)" },
+    ACCUMULATIVE: { value: 2, label: "Accumulative (TF)" },
+    ACCUMULATIVE_ALPHA_BLENDING: { value: 3, label: "Accumulative (Alpha Blending) (TF)" }
 };
 
 let backgroundColor = [0.0, 0.0, 0.0];
 let foregroundColor = [1.0, 1.0, 1.0];
 let cuttingPlanePosition = [0.0, 0.0, 0.0];
 let cuttingPlaneRotation = [0.0, 0.0, 0.0];
-let renderMode = RENDER_MODES.TRANSFER_FUNCTION.value; // Default to Transfer Function mode
+let renderMode = RENDER_MODES.MAX_INTENSITY_PROJECTION.value; // Default to Transfer Function mode
 let cuttingPlaneEnabled = false; // Default to disabled
 let cuttingPlaneFlipped = false; // Default to not flipped
-let lastCuttingPlaneMode = 'none'; // Track the last selected cutting plane mode
+let lastCuttingPlaneMode = 'none'; // Default to disabled cutting plane
+let isoFalloffMode = 0; // Default to linear falloff
 
 function populateRenderModeSelect() {
     const select = document.getElementById("renderModeSelect");
@@ -100,16 +102,19 @@ function loadInput() {
     const autoRotateInput = document.getElementById("auto-rotate");
     onAutoRotateChange(autoRotateInput.checked);
 
+    const isoFalloffModeInput = document.querySelector("input[name='isoFalloffMode']:checked");
+    updateIsoFalloffMode(parseInt(isoFalloffModeInput.value));
+
     // Update visibility and apply settings immediately
     updateForegroundColorVisibility();
     updateCuttingPlaneControlsVisibility();
-    updateShaderInput({ backgroundColor, foregroundColor, cuttingPlanePosition, cuttingPlaneRotation, renderMode, cuttingPlaneEnabled, cuttingPlaneFlipped });
+    updateShaderInput({ backgroundColor, foregroundColor, cuttingPlanePosition, cuttingPlaneRotation, renderMode, cuttingPlaneEnabled, cuttingPlaneFlipped, isoFalloffMode });
 }
 
 function resetInputSettings() {
     backgroundColor = [0.0, 0.0, 0.0];
     foregroundColor = [1.0, 1.0, 1.0];
-    renderMode = RENDER_MODES.TRANSFER_FUNCTION.value; // Reset to Transfer Function mode
+    renderMode = RENDER_MODES.ACCUMULATIVE.value; // Reset to Transfer Function mode
     cuttingPlaneEnabled = false; // Reset to disabled
     lastCuttingPlaneMode = 'none'; // Reset to none mode
 
@@ -267,4 +272,9 @@ function updatePlaneMode(planeMode) {
     }
 
     updatePlaneControlsMode(planeMode);
+}
+
+function updateIsoFalloffMode(value) {
+    isoFalloffMode = parseInt(value);
+    updateTransferFunctionUniforms({ isoFalloffMode });
 }

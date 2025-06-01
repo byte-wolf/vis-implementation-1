@@ -21,5 +21,6 @@ class RaycastShader extends Shader {
         this.setUniform("uIsoOpacities", new Array(MAX_ISO_POINTS_JS).fill(1.0));
         this.setUniform("uIsoColors", new Array(MAX_ISO_POINTS_JS).fill(new THREE.Vector3(0.0, 0.0, 0.0)));
         this.setUniform("uIsoRange", 0.05);
+        this.setUniform("uIsoFalloffMode", 0); // Default to linear falloff
     }
 }

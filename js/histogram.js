@@ -1,4 +1,4 @@
-const MARGIN = { top: 20, right: 30, bottom: 60, left: 80 };
+const MARGIN = { top: 40, right: 30, bottom: 60, left: 80 };
 
 let noDataGroup;
 
@@ -112,7 +112,7 @@ function createHistogram(targetId, numBins = 100) {
     const containerRect = container.node().getBoundingClientRect();
 
     width = containerRect.width;
-    height = containerRect.height / 2;
+    height = (containerRect.height - 5) / 2;
     // console.log("height", height);
 
     const innerWidth = width - MARGIN.left - MARGIN.right;
@@ -122,7 +122,7 @@ function createHistogram(targetId, numBins = 100) {
     const svg = container
         .append("svg")
         .attr("width", width)
-        .attr("height", height * 2);
+        .attr("height", containerRect.height - 5);
 
     const inner = svg
         .append("g")

@@ -31,11 +31,13 @@ uniform float uIsoValues[MAX_ISO_POINTS];
 uniform float uIsoOpacities[MAX_ISO_POINTS];
 uniform vec3 uIsoColors[MAX_ISO_POINTS];
 uniform float uIsoRange;
+uniform int uIsoFalloffMode; // 0: Linear falloff, 1: Binary
 
 // --- Render Mode Uniform ---
 // 0: Maximum Intensity Projection
-// 1: Transfer Function
-// 2: Transfer Function (Old)
+// 1: Maximum Intensity Projection (TF)
+// 2: Accumulative
+// 3: Accumulative (Alpha Blending)
 uniform int uRenderMode;
 
 out vec4 fragColor;
@@ -59,7 +61,7 @@ bool intersectBox(vec3 rayOrigin, vec3 rayDirection, out float tMin, out float t
     return tMin < tMax && tMax > 0.0;
 }
 
-vec4 applyTransferFunction(float density) {
+vec4 applyTransferFunction(float density, int falloffMode) {
     vec4 sampleProperties = vec4(0.0);
 
     for(int idx = 0; idx < uNumIsoPoints; ++idx) {
@@ -76,7 +78,11 @@ vec4 applyTransferFunction(float density) {
         float intensity = 0.0;
 
         if(dist < uIsoRange) {
-            intensity = 1.0 - (dist / uIsoRange); // Linear falloff
+            if(falloffMode == 0) {
+                intensity = 1.0 - (dist / uIsoRange); // Linear falloff
+            } else if(falloffMode == 1) {
+                intensity = 1.0; // Binary
+            }
         }
 
         if(intensity > 0.0) {
@@ -98,7 +104,7 @@ float random(vec2 co) {
     return fract(sin(dot(co.xy, vec2(12.9898, 78.233))) * 43758.5453);
 }
 
-void maximumIntensityProjectionRender(vec3 rayOrigin, vec3 rayDirection, float tMin, float tMax, float dt) {
+void maximumIntensityProjectionRender(vec3 rayOrigin, vec3 rayDirection, float tMin, float tMax, float dt, bool useTransferFunction) {
     float maxIntensity = 0.0;
 
     for(float t = tMin; t < tMax; t += dt) {
@@ -125,7 +131,12 @@ void maximumIntensityProjectionRender(vec3 rayOrigin, vec3 rayDirection, float t
         discard;
     }
 
-    fragColor = vec4(mix(uBackgroundColor, uForegroundColor, maxIntensity), 1.0);
+    if(useTransferFunction == true) {
+        fragColor = applyTransferFunction(maxIntensity, uIsoFalloffMode);
+    } else {
+        fragColor = vec4(mix(uBackgroundColor, uForegroundColor, maxIntensity), 1.0);
+        fragColor = vec4(uForegroundColor, maxIntensity);
+    }
 }
 
 // https://developer.nvidia.com/gpugems/gpugems/part-vi-beyond-triangles/chapter-39-volume-rendering-techniques
@@ -150,7 +161,7 @@ void transferFunctionRender(vec3 rayOrigin, vec3 rayDirection, float tMin, float
         if(all(greaterThanEqual(textureCoord, vec3(0.0))) && all(lessThanEqual(textureCoord, vec3(1.0)))) {
             float density = texture(uVolumeTexture, textureCoord).r;
 
-            vec4 sampleProperties = applyTransferFunction(density); // Returns {premultiplied_col_A0.rgb, alpha_A0}
+            vec4 sampleProperties = applyTransferFunction(density, uIsoFalloffMode); // Returns {premultiplied_col_A0.rgb, alpha_A0}
 
             if(sampleProperties.a > 0.0) {
                 float alpha_corrected = 1.0 - pow(1.0 - sampleProperties.a, stepRatio);
@@ -195,7 +206,7 @@ void transferFunctionRenderOld(vec3 rayOrigin, vec3 rayDirection, float tMin, fl
         if(all(greaterThanEqual(textureCoord, vec3(0.0))) && all(lessThanEqual(textureCoord, vec3(1.0)))) {
             float density = texture(uVolumeTexture, textureCoord).r;
 
-            vec4 sampleColor = applyTransferFunction(density);
+            vec4 sampleColor = applyTransferFunction(density, uIsoFalloffMode);
 
             // Front-to-back alpha compositing
             if(sampleColor.a > 0.0) {
@@ -233,10 +244,12 @@ void main() {
     //tMin += random(vWorldPosition.xy) * dt;
 
     if(uRenderMode == 0) {
-        maximumIntensityProjectionRender(rayOrigin, rayDirection, tMin, tMax, dt);
+        maximumIntensityProjectionRender(rayOrigin, rayDirection, tMin, tMax, dt, false);
     } else if(uRenderMode == 1) {
-        transferFunctionRender(rayOrigin, rayDirection, tMin, tMax, dt);
+        maximumIntensityProjectionRender(rayOrigin, rayDirection, tMin, tMax, dt, true);
     } else if(uRenderMode == 2) {
+        transferFunctionRender(rayOrigin, rayDirection, tMin, tMax, dt);
+    } else if(uRenderMode == 3) {
         transferFunctionRenderOld(rayOrigin, rayDirection, tMin, tMax, dt);
     }
 }
