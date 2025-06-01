@@ -92,41 +92,6 @@ vec4 applyTransferFunction(float density) {
     return sampleProperties;
 }
 
-vec4 applyTransferFunctionOld(float density) {
-    vec4 accumulatedColor = vec4(0.0); // Start with transparent black
-
-    for(int idx = 0; idx < uNumIsoPoints; ++idx) {
-        if(idx >= MAX_ISO_POINTS)
-            break; // Should not happen if uNumIsoPoints is correct
-
-        float isoVal = uIsoValues[idx];
-        float pointOpacity = uIsoOpacities[idx];
-        vec3 pointColor = uIsoColors[idx];
-
-        // Calculate how close the density is to the current iso-value
-        float dist = abs(density - isoVal);
-        float intensity = 0.0;
-
-        if(dist < uIsoRange) {
-            intensity = 1.0 - (dist / uIsoRange); // Linear falloff
-            // intensity = exp(-(dist * dist) / (2.0 * uIsoRange * uIsoRange)); // Gaussian-like
-        }
-
-        if(intensity > 0.0) {
-            vec4 currentColor = vec4(pointColor, pointOpacity * intensity);
-            // Alpha blending (front-to-back for ray marching)
-            accumulatedColor.rgb += (1.0 - accumulatedColor.a) * currentColor.a * currentColor.rgb;
-            accumulatedColor.a += (1.0 - accumulatedColor.a) * currentColor.a;
-
-            // Optimization: if fully opaque, can stop early for this ray segment
-            if(accumulatedColor.a >= 0.99) {
-                break;
-            }
-        }
-    }
-    return accumulatedColor;
-}
-
 // Simple pseudo-random function for jittering
 float random(vec2 co) {
     // Multiply by a large number and take the fractional part
@@ -230,7 +195,7 @@ void transferFunctionRenderOld(vec3 rayOrigin, vec3 rayDirection, float tMin, fl
         if(all(greaterThanEqual(textureCoord, vec3(0.0))) && all(lessThanEqual(textureCoord, vec3(1.0)))) {
             float density = texture(uVolumeTexture, textureCoord).r;
 
-            vec4 sampleColor = applyTransferFunctionOld(density);
+            vec4 sampleColor = applyTransferFunction(density);
 
             // Front-to-back alpha compositing
             if(sampleColor.a > 0.0) {
