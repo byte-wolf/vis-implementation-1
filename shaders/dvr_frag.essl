@@ -6,7 +6,10 @@ precision highp int;
 precision highp float;
 precision highp sampler3D;
 
-in vec3 vWorldPosition;
+in vec3 vTransformedPosition;
+in vec3 vTransformedCameraPosition;
+in vec3 vRayDirection;
+in vec3 vCuttingPlanePositionTransformed;
 
 // --- Camera Uniforms ---
 uniform vec3 uCameraPosition;
@@ -44,8 +47,8 @@ out vec4 fragColor;
 
 // https://tavianator.com/2011/ray_box.html
 bool intersectBox(vec3 rayOrigin, vec3 rayDirection, out float tMin, out float tMax) {
-    vec3 boxMin = -uVolumeSize * 0.5;
-    vec3 boxMax = uVolumeSize * 0.5;
+    vec3 boxMin = vec3(0.0);
+    vec3 boxMax = vec3(1.0);
 
     vec3 invDir = 1.0 / rayDirection;
 
@@ -58,7 +61,7 @@ bool intersectBox(vec3 rayOrigin, vec3 rayDirection, out float tMin, out float t
     tMin = max(max(t1.x, t1.y), t1.z);
     tMax = min(min(t2.x, t2.y), t2.z);
 
-    return tMin < tMax && tMax > 0.0;
+    return tMin <= tMax && tMax >= 0.0;
 }
 
 vec4 applyTransferFunction(float density, int falloffMode) {
@@ -108,18 +111,16 @@ void maximumIntensityProjectionRender(vec3 rayOrigin, vec3 rayDirection, float t
     float maxIntensity = 0.0;
 
     for(float t = tMin; t < tMax; t += dt) {
-        vec3 currentPos = rayOrigin + rayDirection * t;
+        vec3 textureCoord = rayOrigin + rayDirection * t;
 
         // Apply cutting plane only if enabled
         if(uCuttingPlaneEnabled == 1) {
-            float d = dot(currentPos - uCuttingPlanePosition, uCuttingPlaneRotation);
+            float d = dot(textureCoord - vCuttingPlanePositionTransformed, uCuttingPlaneRotation);
 
             if(d < 0.0) {
                 continue; // Skip points behind the plane
             }
         }
-
-        vec3 textureCoord = (currentPos / uVolumeSize) + 0.5;
 
         if(all(greaterThanEqual(textureCoord, vec3(0.0))) && all(lessThanEqual(textureCoord, vec3(1.0)))) {
             float density = texture(uVolumeTexture, textureCoord).r;
@@ -127,14 +128,14 @@ void maximumIntensityProjectionRender(vec3 rayOrigin, vec3 rayDirection, float t
         }
     }
 
-    if(maxIntensity <= 0.01) {
+    if(maxIntensity <= 0.1) {
         discard;
     }
 
     if(useTransferFunction == true) {
         fragColor = applyTransferFunction(maxIntensity, uIsoFalloffMode);
     } else {
-        fragColor = vec4(mix(uBackgroundColor, uForegroundColor, maxIntensity), 1.0);
+        //fragColor = vec4(mix(uBackgroundColor, uForegroundColor, maxIntensity) + vec3(0.2, 0.0, 0.0), 1.0);
         fragColor = vec4(uForegroundColor, maxIntensity);
     }
 }
@@ -149,14 +150,14 @@ void transferFunctionRender(vec3 rayOrigin, vec3 rayDirection, float tMin, float
 
         // Apply cutting plane
         if(uCuttingPlaneEnabled == 1) {
-            float d = dot(currentPos - uCuttingPlanePosition, uCuttingPlaneRotation);
+            float d = dot(currentPos - vCuttingPlanePositionTransformed, uCuttingPlaneRotation);
 
             if(d < 0.0) {
                 continue; // Skip points behind the plane
             }
         }
 
-        vec3 textureCoord = (currentPos / uVolumeSize) + 0.5;
+        vec3 textureCoord = currentPos;
 
         if(all(greaterThanEqual(textureCoord, vec3(0.0))) && all(lessThanEqual(textureCoord, vec3(1.0)))) {
             float density = texture(uVolumeTexture, textureCoord).r;
@@ -190,18 +191,16 @@ void transferFunctionRenderOld(vec3 rayOrigin, vec3 rayDirection, float tMin, fl
     vec4 accumulatedColor = vec4(uBackgroundColor, 0.0);
 
     for(float t = tMin; t < tMax; t += dt) {
-        vec3 currentPos = rayOrigin + rayDirection * t;
+        vec3 textureCoord = rayOrigin + rayDirection * t;
 
         // Apply cutting plane
         if(uCuttingPlaneEnabled == 1) {
-            float d = dot(currentPos - uCuttingPlanePosition, uCuttingPlaneRotation);
+            float d = dot(textureCoord - vCuttingPlanePositionTransformed, uCuttingPlaneRotation);
 
             if(d < 0.0) {
                 continue; // Skip points behind the plane
             }
         }
-
-        vec3 textureCoord = (currentPos / uVolumeSize) + 0.5;
 
         if(all(greaterThanEqual(textureCoord, vec3(0.0))) && all(lessThanEqual(textureCoord, vec3(1.0)))) {
             float density = texture(uVolumeTexture, textureCoord).r;
@@ -228,11 +227,10 @@ void transferFunctionRenderOld(vec3 rayOrigin, vec3 rayDirection, float tMin, fl
 }
 
 void main() {
-    vec3 rayOrigin = uCameraPosition;
-    vec3 rayDirection = normalize(vWorldPosition - rayOrigin);
+    vec3 normalizedRayDirection = normalize(vRayDirection);
 
     float tMin, tMax;
-    bool hit = intersectBox(rayOrigin, rayDirection, tMin, tMax);
+    bool hit = intersectBox(vTransformedCameraPosition, normalizedRayDirection, tMin, tMax);
 
     if(!hit) {
         discard;
@@ -240,16 +238,16 @@ void main() {
 
     tMin = max(tMin, 0.0);
 
-    float dt = 0.5;
-    //tMin += random(vWorldPosition.xy) * dt;
+    float dt = 0.005;
+    tMin += random(vTransformedPosition.xy) * dt / 2.0;
 
     if(uRenderMode == 0) {
-        maximumIntensityProjectionRender(rayOrigin, rayDirection, tMin, tMax, dt, false);
+        maximumIntensityProjectionRender(vTransformedCameraPosition, normalizedRayDirection, tMin, tMax, dt, false);
     } else if(uRenderMode == 1) {
-        maximumIntensityProjectionRender(rayOrigin, rayDirection, tMin, tMax, dt, true);
+        maximumIntensityProjectionRender(vTransformedCameraPosition, normalizedRayDirection, tMin, tMax, dt, true);
     } else if(uRenderMode == 2) {
-        transferFunctionRender(rayOrigin, rayDirection, tMin, tMax, dt);
+        transferFunctionRender(vTransformedCameraPosition, normalizedRayDirection, tMin, tMax, dt);
     } else if(uRenderMode == 3) {
-        transferFunctionRenderOld(rayOrigin, rayDirection, tMin, tMax, dt);
+        transferFunctionRenderOld(vTransformedCameraPosition, normalizedRayDirection, tMin, tMax, dt);
     }
 }

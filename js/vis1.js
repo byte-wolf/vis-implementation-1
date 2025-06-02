@@ -150,7 +150,7 @@ async function resetVis() {
 
     await raycastShader.load();
 
-    const boxGeometry = new THREE.BoxGeometry(1, 1, 1);
+    const boxGeometry = new THREE.BoxGeometry(volume.width, volume.height, volume.depth);
     const raycastMaterial = raycastShader.material;
     raycastMaterial.side = THREE.BackSide;
 

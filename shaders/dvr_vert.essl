@@ -5,15 +5,23 @@
 precision highp float;
 precision highp int;
 
-uniform vec3 uVolumeSize; 
+uniform vec3 uCameraPosition;
+uniform vec3 uVolumeSize;
+uniform vec3 uCuttingPlanePosition;
 
+out vec3 vTransformedPosition;
+out vec3 vTransformedCameraPosition;
+out vec3 vRayDirection;
 out vec3 vWorldPosition;
+out vec3 vCuttingPlanePositionTransformed;
 
 void main() {
-    vec3 scaledLocalPosition = position * uVolumeSize;
+    vec4 worldPos = modelMatrix * vec4(position, 1.0);
 
-    vec4 worldPos = modelMatrix * vec4(scaledLocalPosition, 1.0);
-    vWorldPosition = worldPos.xyz;
+    vTransformedPosition = (worldPos.xyz / uVolumeSize) + 0.5;
+    vTransformedCameraPosition = (uCameraPosition / uVolumeSize) + 0.5;
+    vRayDirection = vTransformedPosition - vTransformedCameraPosition;
+    vCuttingPlanePositionTransformed = (uCuttingPlanePosition / uVolumeSize) + 0.5;
 
     gl_Position = projectionMatrix * viewMatrix * worldPos;
 }
