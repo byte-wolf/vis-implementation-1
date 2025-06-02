@@ -13,6 +13,7 @@ in vec3 vRayDirection;
 in vec3 vCuttingPlanePositionTransformed;
 
 // --- Volume Texture Uniforms ---
+uniform vec3 uVolumeSize;
 uniform sampler3D uVolumeTexture;
 
 // --- Static background and foreground color uniforms ---
@@ -40,6 +41,18 @@ uniform int uIsoFalloffMode; // 0: Linear falloff, 1: Binary
 uniform int uRenderMode;
 
 out vec4 fragColor;
+
+float calculateSampleDistance(vec3 rayDirection) {
+    float epsilon = 0.00001;
+    vec3 absoluteScaledRayDirection = (abs(vRayDirection)) * uVolumeSize;
+    float minComponent = min(absoluteScaledRayDirection.x, min(absoluteScaledRayDirection.y, absoluteScaledRayDirection.z));
+
+    if(minComponent > epsilon) {
+        return 1.0 / minComponent;
+    } else {
+        return 0.001;
+    }
+}
 
 // https://tavianator.com/2011/ray_box.html
 bool intersectBox(vec3 rayOrigin, vec3 rayDirection, out float tMin, out float tMax) {
@@ -237,7 +250,8 @@ void main() {
     tMin = max(tMin, 0.0);
 
     float dt = 0.005;
-    tMin += random(vTransformedPosition.xy) * dt / 2.0;
+    //float dt = calculateSampleDistance(normalizedRayDirection);
+    //tMin += random(vTransformedPosition.xy) * dt / 2.0;
 
     if(uRenderMode == 0) {
         maximumIntensityProjectionRender(vTransformedCameraPosition, normalizedRayDirection, tMin, tMax, dt, false);
