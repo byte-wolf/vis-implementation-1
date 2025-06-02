@@ -6,17 +6,14 @@ precision highp int;
 precision highp float;
 precision highp sampler3D;
 
+// --- Vertex Attributes ---
 in vec3 vTransformedPosition;
 in vec3 vTransformedCameraPosition;
 in vec3 vRayDirection;
 in vec3 vCuttingPlanePositionTransformed;
 
-// --- Camera Uniforms ---
-uniform vec3 uCameraPosition;
-
 // --- Volume Texture Uniforms ---
 uniform sampler3D uVolumeTexture;
-uniform vec3 uVolumeSize;
 
 // --- Static background and foreground color uniforms ---
 uniform vec3 uBackgroundColor;
@@ -24,7 +21,6 @@ uniform vec3 uForegroundColor;
 
 // --- Cutting Plane Uniforms ---
 uniform int uCuttingPlaneEnabled;
-uniform vec3 uCuttingPlanePosition;
 uniform vec3 uCuttingPlaneRotation;
 
 // --- Transfer Function / Isosurface Uniforms ---
@@ -93,7 +89,7 @@ vec4 applyTransferFunction(float density, int falloffMode) {
             sampleProperties.rgb += (1.0 - sampleProperties.a) * currentRuleAlpha * pointColor;
             sampleProperties.a += (1.0 - sampleProperties.a) * currentRuleAlpha;
 
-            if(sampleProperties.a >= 0.99) {
+            if(sampleProperties.a >= 1.0) {
                 break;
             }
         }
@@ -125,6 +121,11 @@ void maximumIntensityProjectionRender(vec3 rayOrigin, vec3 rayDirection, float t
         if(all(greaterThanEqual(textureCoord, vec3(0.0))) && all(lessThanEqual(textureCoord, vec3(1.0)))) {
             float density = texture(uVolumeTexture, textureCoord).r;
             maxIntensity = max(maxIntensity, density);
+
+            // Early ray termination
+            if(maxIntensity >= 1.0) {
+                break;
+            }
         }
     }
 
@@ -170,6 +171,7 @@ void transferFunctionRender(vec3 rayOrigin, vec3 rayDirection, float tMin, float
                 accumulatedColor.a += (1.0 - accumulatedColor.a) * alpha_corrected;
             }
 
+            // Early ray termination
             if(accumulatedColor.a >= 1.0) {
                 break;
             }
@@ -180,11 +182,7 @@ void transferFunctionRender(vec3 rayOrigin, vec3 rayDirection, float tMin, float
         discard;
     }
 
-    // Composite the volume's color (accumulatedColor.rgb, which is pre-multiplied)
-    // over the background color.
-    // C_final = C_volume + (1 - Alpha_volume) * C_background
-    vec3 finalRgb = accumulatedColor.rgb + (1.0 - accumulatedColor.a) * uBackgroundColor;
-    fragColor = accumulatedColor; // Output opaque color after blending with background
+    fragColor = accumulatedColor;
 }
 
 void transferFunctionRenderOld(vec3 rayOrigin, vec3 rayDirection, float tMin, float tMax, float dt) {
@@ -207,12 +205,12 @@ void transferFunctionRenderOld(vec3 rayOrigin, vec3 rayDirection, float tMin, fl
 
             vec4 sampleColor = applyTransferFunction(density, uIsoFalloffMode);
 
-            // Front-to-back alpha compositing
             if(sampleColor.a > 0.0) {
                 accumulatedColor.rgb += (1.0 - accumulatedColor.a) * sampleColor.a * sampleColor.rgb;
                 accumulatedColor.a += (1.0 - accumulatedColor.a) * sampleColor.a;
             }
 
+            // Early ray termination
             if(accumulatedColor.a >= 1.0) {
                 break;
             }
