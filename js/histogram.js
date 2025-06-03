@@ -45,9 +45,54 @@ function updateBarsScale() {
  *
  * @param {Volume} volume
  */
-function updateHistogram(volume) {
+function updateHistogram() {
+    const {
+        volume,
+        position,
+        rotation, // normal vector
+    } = getVolumeCuttingPlaneProps();
+    const {
+        enabled,
+        flipped,
+    } = getCuttingPlaneProps();
+
+    if (flipped) {
+        rotation.x *= -1;
+        rotation.y *= -1;
+        rotation.z *= -1;
+    }
+
+    let data = null;
+
+    if (enabled) {
+        let newIdx = 0;
+        data = new Float32Array(volume.width * volume.height * volume.depth);
+        for (let i = 0; i < volume.width; i++) {
+            for (let j = 0; j < volume.height; j++) {
+                for (let k = 0; k < volume.depth; k++) {
+                    const idx = i + j * volume.width + k * volume.width * volume.height;
+                    const voxel = volume.voxels[idx];
+
+                    const x = i - volume.width * 0.5;
+                    const y = j - volume.height * 0.5;
+                    const z = k - volume.depth * 0.5;
+
+                    const d = new THREE.Vector3(x - position.x, y - position.y, z - position.z)
+                        .dot(new THREE.Vector3(rotation.x, rotation.y, rotation.z));
+                    
+                    if (d > 0) {
+                        data[newIdx] = voxel;
+                        newIdx++;
+                    }
+                }
+            }
+        }
+        data = data.subarray(0, newIdx);
+    } else {
+        data = volume.voxels;
+    }
+
     lastVolume = volume;
-    const data = volume.voxels;
 
     const container = d3.select(`#${containerId}`);
 
@@ -186,6 +231,7 @@ function createHistogram(targetId, numBins = 100) {
         .text("No data");
 
     drawInteractivePoints(inner, x, y);
+
 }
 
 function updateYAxisScale(value) {
@@ -213,4 +259,5 @@ function updateYAxisScale(value) {
         .call(d3.axisLeft(y).tickFormat(d3.format(".1f")));
 
     updateBarsScale();
+
 }

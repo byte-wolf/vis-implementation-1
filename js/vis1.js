@@ -103,10 +103,9 @@ async function resetVis() {
     scene.add(planeControls);
 
     planeControls.addEventListener("change", () => {
-        const planeNormal = planeControlsObject.getWorldDirection(new THREE.Vector3());
         updateCuttingPlane(
             planeControlsObject.position,
-            planeNormal,
+            planeControlsObject.getWorldDirection(new THREE.Vector3()),
         );
     });
 
@@ -115,9 +114,10 @@ async function resetVis() {
     });
     planeControls.addEventListener("mouseUp", () => {
         orbitCamera.setEnabled(true);
+        updateHistogram();
     });
 
-    updateHistogram(volume);
+    updateHistogram();
 
     const volumeTexture = new THREE.Data3DTexture(
         volume.voxels,
@@ -372,7 +372,6 @@ function updateTransferFunctionUniforms() {
     requestAnimationFrame(paint);
 }
 
-
 /**
  * Set the auto-rotate property of the orbit camera.
  *
@@ -402,4 +401,12 @@ function updatePlaneControlsMode(mode) {
         planeControls.detach(planeControlsObject);
     }
     requestAnimationFrame(paint);
+}
+
+function getVolumeCuttingPlaneProps() {
+    return {
+        volume,
+        position: planeControlsObject.position,
+        rotation: planeControlsObject.getWorldDirection(new THREE.Vector3()),
+    }
 }

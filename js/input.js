@@ -277,12 +277,13 @@ function onCuttingPlaneEnabledChange(enabled) {
 
     // Update visibility and apply immediately
     updateCuttingPlaneControlsVisibility();
+    updateHistogram();
     updateShaderInput({ cuttingPlaneEnabled });
 }
 
 function onCuttingPlaneFlippedChange(flipped) {
-    console.log("onCuttingPlaneFlippedChange", flipped);
     cuttingPlaneFlipped = flipped;
+    updateHistogram();
     updateShaderInput({ cuttingPlaneFlipped, cuttingPlaneRotation });
 }
 
@@ -324,4 +325,11 @@ function updateIsoFalloffMode(value) {
     if (window.updateRangeIndicatorFalloffMode) {
         window.updateRangeIndicatorFalloffMode();
     }
+}
+
+function getCuttingPlaneProps() {
+    return {
+        enabled: cuttingPlaneEnabled,
+        flipped: cuttingPlaneFlipped,
+    };
 }
