@@ -110,6 +110,50 @@ vec4 applyTransferFunction(float density, int falloffMode) {
     return sampleProperties;
 }
 
+bool interpolateIsoValueBetween(float density1, float density2, out float t, out vec4 sampleProperties) {
+    for(int idx = 0; idx < uNumIsoPoints; ++idx) {
+        if(idx >= MAX_ISO_POINTS) {
+            break;
+        }
+
+        float isoValue = uIsoValues[idx];
+        float pointOpacity = uIsoOpacities[idx];
+        vec3 pointColor = uIsoColors[idx];
+
+        // Check for transition in either direction
+        bool hitCondition = (density1 <= isoValue && density2 >= isoValue) || (density1 >= isoValue && density2 <= isoValue);
+
+        if(hitCondition) {
+            t = (isoValue - density1) / (density2 - density1);
+            t = clamp(t, 0.0, 1.0);
+            sampleProperties = vec4(pointColor, pointOpacity);
+            return true;
+        }
+    }
+
+    return false;
+}
+
+float sampleVolume(vec3 textureCoordinates) {
+    if(textureCoordinates.x < 0.0 || textureCoordinates.x > 1.0 ||
+        textureCoordinates.y < 0.0 || textureCoordinates.y > 1.0 ||
+        textureCoordinates.z < 0.0 || textureCoordinates.z > 1.0) {
+        return 0.0;
+    }
+
+    return texture(uVolumeTexture, textureCoordinates).r;
+}
+
+vec3 calculateNormal(vec3 hitPos) {
+    float epsilon = 0.0025;
+    vec3 grad = vec3(0.0);
+    grad.x = sampleVolume(hitPos + vec3(epsilon, 0.0, 0.0)) - sampleVolume(hitPos - vec3(epsilon, 0.0, 0.0));
+    grad.y = sampleVolume(hitPos + vec3(0.0, epsilon, 0.0)) - sampleVolume(hitPos - vec3(0.0, epsilon, 0.0));
+    grad.z = sampleVolume(hitPos + vec3(0.0, 0.0, epsilon)) - sampleVolume(hitPos - vec3(0.0, 0.0, epsilon));
+
+    return normalize(grad);
+}
+
 // Simple pseudo-random function for jittering
 float random(vec2 co) {
     // Multiply by a large number and take the fractional part
@@ -237,6 +281,47 @@ void transferFunctionRenderOld(vec3 rayOrigin, vec3 rayDirection, float tMin, fl
     fragColor = accumulatedColor; // Output opaque color after blending with background
 }
 
+void firstHitRender(vec3 rayOrigin, vec3 rayDirection, float tMin, float tMax, float dt) {
+    vec3 hitPosition = vec3(0.0);
+    vec4 hitColor = vec4(0.0);
+
+    for(float t = tMin; t < tMax; t += dt) {
+        vec3 currentCoordinates = rayOrigin + rayDirection * t;
+        vec3 nextCoordinates = rayOrigin + rayDirection * (t + dt);
+
+        // Apply cutting plane
+        if(uCuttingPlaneEnabled == 1) {
+            float d = dot(currentCoordinates - vCuttingPlanePositionTransformed, uCuttingPlaneRotation);
+
+            if(d < 0.0) {
+                continue; // Skip points behind the plane
+            }
+        }
+
+        if(all(greaterThanEqual(currentCoordinates, vec3(0.0))) && all(lessThanEqual(nextCoordinates, vec3(1.0)))) {
+            float currentDensity = texture(uVolumeTexture, currentCoordinates).r;
+            float nextDensity = texture(uVolumeTexture, nextCoordinates).r;
+
+            float t;
+            vec4 sampleProperties;
+
+            bool hit = interpolateIsoValueBetween(currentDensity, nextDensity, t, sampleProperties);
+
+            if(hit) {
+                hitPosition = mix(currentCoordinates, nextCoordinates, t);
+                hitColor = vec4(1.0);
+                break; // Stop at the first hit
+            }
+        }
+    }
+
+    vec3 surfaceNormal = calculateNormal(hitPosition);
+
+    fragColor = vec4(hitPosition, 1.0);
+    //fragColor = vec4(surfaceNormal * 0.5 + 0.5, hitColor.a);
+    //fragColor = vec4(hitColor.rgb, 1.0);
+}
+
 void main() {
     vec3 normalizedRayDirection = normalize(vRayDirection);
 
@@ -244,7 +329,8 @@ void main() {
     bool hit = intersectBox(vTransformedCameraPosition, normalizedRayDirection, tMin, tMax);
 
     if(!hit) {
-        discard;
+        fragColor = vec4(1.0);
+        return;
     }
 
     tMin = max(tMin, 0.0);
@@ -261,5 +347,7 @@ void main() {
         transferFunctionRender(vTransformedCameraPosition, normalizedRayDirection, tMin, tMax, dt);
     } else if(uRenderMode == 3) {
         transferFunctionRenderOld(vTransformedCameraPosition, normalizedRayDirection, tMin, tMax, dt);
+    } else if(uRenderMode == 4) {
+        firstHitRender(vTransformedCameraPosition, normalizedRayDirection, tMin, tMax, dt);
     }
 }

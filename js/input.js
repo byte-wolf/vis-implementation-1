@@ -1,9 +1,19 @@
 // Render modes configuration
 const RENDER_MODES = {
-    MAX_INTENSITY_PROJECTION: { value: 0, label: "Maximum Intensity Projection" },
-    MAX_INTENSITY_PROJECTION_TF: { value: 1, label: "Maximum Intensity Projection (TF)" },
+    MAX_INTENSITY_PROJECTION: {
+        value: 0,
+        label: "Maximum Intensity Projection",
+    },
+    MAX_INTENSITY_PROJECTION_TF: {
+        value: 1,
+        label: "Maximum Intensity Projection (TF)",
+    },
     ACCUMULATIVE: { value: 2, label: "Accumulative (TF)" },
-    ACCUMULATIVE_ALPHA_BLENDING: { value: 3, label: "Accumulative (Alpha Blending) (TF)" }
+    ACCUMULATIVE_ALPHA_BLENDING: {
+        value: 3,
+        label: "Accumulative (Alpha Blending) (TF)",
+    },
+    FIRST_HIT: { value: 4, label: "First-Hit Compositing (TF)" },
 };
 
 let backgroundColor = [0.0, 0.0, 0.0];
@@ -13,7 +23,7 @@ let cuttingPlaneRotation = [0.0, 0.0, 0.0];
 let renderMode = RENDER_MODES.MAX_INTENSITY_PROJECTION.value; // Default to Transfer Function mode
 let cuttingPlaneEnabled = false; // Default to disabled
 let cuttingPlaneFlipped = false; // Default to not flipped
-let lastCuttingPlaneMode = 'none'; // Default to disabled cutting plane
+let lastCuttingPlaneMode = "none"; // Default to disabled cutting plane
 let isoFalloffMode = 0; // Default to linear falloff
 
 function populateRenderModeSelect() {
@@ -24,7 +34,7 @@ function populateRenderModeSelect() {
     select.innerHTML = "";
 
     // Add options from configuration
-    Object.values(RENDER_MODES).forEach(mode => {
+    Object.values(RENDER_MODES).forEach((mode) => {
         const option = document.createElement("option");
         option.value = mode.value.toString();
         option.textContent = mode.label;
@@ -36,7 +46,9 @@ function populateRenderModeSelect() {
 }
 
 function updateForegroundColorVisibility() {
-    const foregroundColorField = document.getElementById("foregroundColorField");
+    const foregroundColorField = document.getElementById(
+        "foregroundColorField"
+    );
     if (!foregroundColorField) return;
 
     // Show foreground color only for Maximum Intensity Projection mode
@@ -52,11 +64,16 @@ function updateForegroundColorVisibility() {
 }
 
 function updateCuttingPlaneControlsVisibility() {
-    const cuttingPlaneButtons = document.querySelector(".cutting-plane-buttons");
+    const cuttingPlaneButtons = document.querySelector(
+        ".cutting-plane-buttons"
+    );
     const controlLabel = document.querySelector(".control-section-label");
-    const cuttingPlaneFlippedField = document.getElementById("cutting-plane-flipped").parentElement;
+    const cuttingPlaneFlippedField = document.getElementById(
+        "cutting-plane-flipped"
+    ).parentElement;
 
-    if (!cuttingPlaneButtons || !controlLabel || !cuttingPlaneFlippedField) return;
+    if (!cuttingPlaneButtons || !controlLabel || !cuttingPlaneFlippedField)
+        return;
 
     // Show cutting plane controls only when cutting plane is enabled
     if (cuttingPlaneEnabled) {
@@ -93,10 +110,14 @@ function loadInput() {
     const renderModeSelect = document.getElementById("renderModeSelect");
     renderMode = parseInt(renderModeSelect.value);
 
-    const cuttingPlaneEnabledInput = document.getElementById("cutting-plane-enabled");
+    const cuttingPlaneEnabledInput = document.getElementById(
+        "cutting-plane-enabled"
+    );
     cuttingPlaneEnabled = cuttingPlaneEnabledInput.checked;
 
-    const cuttingPlaneFlippedInput = document.getElementById("cutting-plane-flipped");
+    const cuttingPlaneFlippedInput = document.getElementById(
+        "cutting-plane-flipped"
+    );
     cuttingPlaneFlipped = cuttingPlaneFlippedInput.checked;
 
     const autoRotateInput = document.getElementById("auto-rotate");
@@ -105,13 +126,24 @@ function loadInput() {
     const isoSurfaceRangeInput = document.getElementById("isoRangeValue");
     updateIsoRange(parseFloat(isoSurfaceRangeInput.value));
 
-    const isoFalloffModeInput = document.querySelector("input[name='isoFalloffMode']:checked");
+    const isoFalloffModeInput = document.querySelector(
+        "input[name='isoFalloffMode']:checked"
+    );
     updateIsoFalloffMode(parseInt(isoFalloffModeInput.value));
 
     // Update visibility and apply settings immediately
     updateForegroundColorVisibility();
     updateCuttingPlaneControlsVisibility();
-    updateShaderInput({ backgroundColor, foregroundColor, cuttingPlanePosition, cuttingPlaneRotation, renderMode, cuttingPlaneEnabled, cuttingPlaneFlipped, isoFalloffMode });
+    updateShaderInput({
+        backgroundColor,
+        foregroundColor,
+        cuttingPlanePosition,
+        cuttingPlaneRotation,
+        renderMode,
+        cuttingPlaneEnabled,
+        cuttingPlaneFlipped,
+        isoFalloffMode,
+    });
 }
 
 function resetInputSettings() {
@@ -119,7 +151,7 @@ function resetInputSettings() {
     foregroundColor = [1.0, 1.0, 1.0];
     renderMode = RENDER_MODES.ACCUMULATIVE.value; // Reset to Transfer Function mode
     cuttingPlaneEnabled = false; // Reset to disabled
-    lastCuttingPlaneMode = 'none'; // Reset to none mode
+    lastCuttingPlaneMode = "none"; // Reset to none mode
 
     const backgroundColorInput = document.getElementById("backgroundInput");
     backgroundColorInput.value = rgbArrayToHex(backgroundColor);
@@ -127,7 +159,9 @@ function resetInputSettings() {
     const foregroundColorInput = document.getElementById("foregroundInput");
     foregroundColorInput.value = rgbArrayToHex(foregroundColor);
 
-    const cuttingPlaneEnabledInput = document.getElementById("cutting-plane-enabled");
+    const cuttingPlaneEnabledInput = document.getElementById(
+        "cutting-plane-enabled"
+    );
     cuttingPlaneEnabledInput.checked = cuttingPlaneEnabled;
 
     // Repopulate and reset render mode select
@@ -136,7 +170,16 @@ function resetInputSettings() {
     // Update visibility and apply settings immediately
     updateForegroundColorVisibility();
     updateCuttingPlaneControlsVisibility();
-    updateShaderInput({ backgroundColor, foregroundColor, cuttingPlanePosition, cuttingPlaneRotation, renderMode, cuttingPlaneEnabled, cuttingPlaneFlipped, isoFalloffMode });
+    updateShaderInput({
+        backgroundColor,
+        foregroundColor,
+        cuttingPlanePosition,
+        cuttingPlaneRotation,
+        renderMode,
+        cuttingPlaneEnabled,
+        cuttingPlaneFlipped,
+        isoFalloffMode,
+    });
 }
 
 function updateBackground(color) {
@@ -150,16 +193,8 @@ function updateForeground(color) {
 }
 
 function updateCuttingPlane(position, rotation) {
-    cuttingPlanePosition = [
-        position.x,
-        position.y,
-        position.z,
-    ]
-    cuttingPlaneRotation = [
-        rotation.x,
-        rotation.y,
-        rotation.z,
-    ];
+    cuttingPlanePosition = [position.x, position.y, position.z];
+    cuttingPlaneRotation = [rotation.x, rotation.y, rotation.z];
 
     updateShaderInput({ cuttingPlanePosition, cuttingPlaneRotation });
 }
@@ -181,9 +216,9 @@ function rgbArrayToHex(rgb) {
 }
 
 /**
- * 
- * @param {string} hex 
- * @returns {number[]} 
+ *
+ * @param {string} hex
+ * @returns {number[]}
  */
 function hexToRgbArray(hex) {
     return rgbToArray(hexToRgb(hex.toLocaleLowerCase()));
@@ -198,10 +233,10 @@ function hexToRgb(hex) {
     var result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
     return result
         ? {
-            r: parseInt(result[1], 16),
-            g: parseInt(result[2], 16),
-            b: parseInt(result[3], 16),
-        }
+              r: parseInt(result[1], 16),
+              g: parseInt(result[2], 16),
+              b: parseInt(result[3], 16),
+          }
         : null;
 }
 
@@ -227,13 +262,15 @@ function onCuttingPlaneEnabledChange(enabled) {
 
         // Initialize the cutting plane position and rotation from the planeControlsObject
         // This ensures the cutting plane is visible immediately when enabled
-        if (typeof planeControlsObject !== 'undefined' && planeControlsObject) {
-            const planeNormal = planeControlsObject.getWorldDirection(new THREE.Vector3());
+        if (typeof planeControlsObject !== "undefined" && planeControlsObject) {
+            const planeNormal = planeControlsObject.getWorldDirection(
+                new THREE.Vector3()
+            );
             updateCuttingPlane(planeControlsObject.position, planeNormal);
         }
     } else {
         // When disabling, set to 'none' mode
-        updatePlaneControlsMode('none');
+        updatePlaneControlsMode("none");
     }
 
     // Update visibility and apply immediately
@@ -260,15 +297,15 @@ function updatePlaneMode(planeMode) {
     const rotateButton = document.getElementById("rotateButton");
     const visibilityButton = document.getElementById("visibilityButton");
 
-    if (planeMode === 'translate') {
+    if (planeMode === "translate") {
         translateButton.classList.add("active");
         rotateButton.classList.remove("active");
         visibilityButton.classList.remove("active");
-    } else if (planeMode === 'rotate') {
+    } else if (planeMode === "rotate") {
         translateButton.classList.remove("active");
         rotateButton.classList.add("active");
         visibilityButton.classList.remove("active");
-    } else if (planeMode === 'none') {
+    } else if (planeMode === "none") {
         translateButton.classList.remove("active");
         rotateButton.classList.remove("active");
         visibilityButton.classList.add("active");
