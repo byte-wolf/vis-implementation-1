@@ -13,7 +13,7 @@ const RENDER_MODES = {
         value: 3,
         label: "Accumulative (Alpha Blending) (TF)",
     },
-    FIRST_HIT: { value: 4, label: "First-Hit Compositing (TF)" },
+    FIRST_HIT: { value: 4, label: "First-Hit Rendering (TF)" },
 };
 
 let backgroundColor = [0.0, 0.0, 0.0];
