@@ -3,6 +3,11 @@ let interactivePoints = [
     { id: 'iso1', x: 0.15, y: 0.5, color: "#ff8f6a", label: "Surface 1" }, // Density 0.2, Opacity 0.8, Cyan
     { id: 'iso2', x: 0.3, y: 1.0, color: "#F9F6EE", label: "Surface 2" }  // Density 0.7, Opacity 0.5, Magenta
 ];
+interactivePoints = [
+    { id: 'iso1', x: 0.1, y: 0.5, color: "#ff8246", label: "Surface 1" }, // Orange
+    { id: 'iso2', x: 0.3, y: 1.0, color: "#ffffff", label: "Surface 2" }, // White
+    { id: 'iso3', x: 0.48, y: 0.5, color: "#0000ff", label: "Surface 2" }, // Blue
+];
 let draggedPoint = null; // To keep track of the point being dragged
 
 let pointToColor = null;

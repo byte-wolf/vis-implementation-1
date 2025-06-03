@@ -350,19 +350,20 @@ vec3 applySurfaceLighting(vec3 hitPosition, vec3 surfaceColor) {
     vec3 surfaceNormal = calculateNormal(hitPosition);
     vec3 lightDirection = normalize(vec3(0.0, 2.0, 1.0));
 
-    vec3 ambientLightColor = vec3(1.0);
-    vec3 ambient = 0.5 * surfaceColor * ambientLightColor;
+    vec3 ambientLightColor = vec3(0.8);
+    vec3 ambient = 0.7 * surfaceColor * ambientLightColor;
 
-    float NdotL = max(dot(surfaceNormal, lightDirection), 0.0); // N.L, keine negativen Werte
-    vec3 diffuse = 0.5 * NdotL * surfaceColor * ambientLightColor;
+    vec3 directLightColor = vec3(1.0);
+    float NdotL = max(dot(surfaceNormal, lightDirection), 0.0);
+    vec3 diffuse = 0.5 * NdotL * surfaceColor * directLightColor;
 
     vec3 viewDirection = normalize(vTransformedCameraPosition - hitPosition);
     vec3 reflectionDirection = reflect(lightDirection, surfaceNormal);
     float RdotV = max(dot(reflectionDirection, viewDirection), 0.0);
-    float shininess = 100.0;
-    float specularIntensity = 0.5;
+    float shininess = 3.0;
+    float specularIntensity = 0.3;
     float spec = pow(RdotV, shininess);
-    vec3 specular = specularIntensity * spec * surfaceColor * ambientLightColor;
+    vec3 specular = specularIntensity * spec * surfaceColor * directLightColor;
 
     vec3 finalColor = ambient + diffuse + specular;
 
@@ -374,7 +375,7 @@ void phongShadedRender(vec3 rayOrigin, vec3 rayDirection, float tMin, float tMax
     vec4 hitColor = vec4(0.0);
     bool foundHit = false;
 
-    vec4 accumulatedColor = vec4(0.0, 0.0, 0.0, 0.0);
+    vec4 accumulatedColor = vec4(uBackgroundColor, 0.0);
 
     for(float t = tMin; t < tMax; t += dt) {
         vec3 currentCoordinates = rayOrigin + rayDirection * t;
@@ -400,29 +401,39 @@ void phongShadedRender(vec3 rayOrigin, vec3 rayDirection, float tMin, float tMax
             vec4 sampleProperties;
 
             bool hit = false;
-            for(int idx = 0; idx < uNumIsoPoints; ++idx) {
+            for(int idx = 0; idx < uNumIsoPoints; idx++) {
                 if(interpolateIsoValueBetween(idx, currentDensity, nextDensity, t, sampleProperties)) {
+                    hitPosition = mix(currentCoordinates, nextCoordinates, t);
+                    hitColor = sampleProperties;
+                    foundHit = true;
                     hit = true;
                     break;
                 }
             }
 
             if(hit) {
-                hitPosition = mix(currentCoordinates, nextCoordinates, t);
-                hitColor = sampleProperties;
-                foundHit = true;
-                break; // Stop at the first hit
+                vec3 litColor = applySurfaceLighting(hitPosition, hitColor.rgb);
+                float remainingAlpha = (1.0 - accumulatedColor.a);
+                accumulatedColor.rgb += remainingAlpha * hitColor.a * litColor;
+                accumulatedColor.a += remainingAlpha * hitColor.a;
+            }
+
+            // Early ray termination
+            if(accumulatedColor.a >= 1.0) {
+                break;
             }
         }
     }
 
-    if(!foundHit) {
+    if(accumulatedColor.a <= 0.1) {
         discard;
     }
 
-    vec3 finalColor = applySurfaceLighting(hitPosition, hitColor.rgb);
+    fragColor = accumulatedColor;
 
-    fragColor = vec4(finalColor, hitColor.a);
+    /* vec3 finalColor = applySurfaceLighting(hitPosition, hitColor.rgb);
+
+    fragColor = vec4(finalColor, hitColor.a); */
 
 }
 
