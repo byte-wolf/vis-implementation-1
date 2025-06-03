@@ -309,10 +309,7 @@ void firstHitRender(vec3 rayOrigin, vec3 rayDirection, float tMin, float tMax, f
             vec4 sampleProperties;
 
             bool hit = false;
-            for(int idx = 0; idx < uNumIsoPoints; ++idx) {
-                if(idx >= MAX_ISO_POINTS) {
-                    break;
-                }
+            for(int idx = 0; idx < uNumIsoPoints; idx++) {
 
                 if(interpolateIsoValueBetween(idx, currentDensity, nextDensity, t, sampleProperties)) {
                     hit = true;
