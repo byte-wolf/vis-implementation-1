@@ -50,7 +50,6 @@ function updateHistogram(volume) {
     const data = volume.voxels;
 
     const container = d3.select(`#${containerId}`);
-    const containerRect = container.node().getBoundingClientRect();
 
     const innerWidth = width - MARGIN.left - MARGIN.right;
     const innerHeight = height - MARGIN.top - MARGIN.bottom;
@@ -71,8 +70,6 @@ function updateHistogram(volume) {
     cachedBins = bins;
 
     const validBins = bins.filter((b) => typeof b.length === "number");
-
-    const maxBinCount = d3.max(validBins, (d) => d.length);
 
     const maxValue = d3.sum(validBins, (d) => d.length);
     cachedMaxValue = maxValue; // Cache for scale updates
