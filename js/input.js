@@ -11,12 +11,12 @@ const RENDER_MODES = {
     ACCUMULATIVE: { value: 2, label: "Accumulative (TF)" },
     ACCUMULATIVE_ALPHA_BLENDING: {
         value: 3,
-        label: "Accumulative (Alpha Blending) (TF)",
+        label: "Accumulative (Experimental) (TF)",
     },
-    FIRST_HIT_POSITIONS: { value: 4, label: "First-Hit Positions (TF)" },
-    FIRST_HIT_NORMALS: { value: 5, label: "First-Hit Normals (TF)" },
-    FIRST_HIT_SOLID_COLOR: { value: 6, label: "First-Hit Solid Color (TF)" },
-    PHONG_SHADED: { value: 7, label: "Phong Shaded (TF)" },
+    FIRST_HIT_POSITIONS: { value: 4, label: "First-Hit Positions (TF*)" },
+    FIRST_HIT_NORMALS: { value: 5, label: "First-Hit Normals (TF*)" },
+    FIRST_HIT_SOLID_COLOR: { value: 6, label: "First-Hit Solid Color (TF*)" },
+    PHONG_SHADED: { value: 7, label: "Phong Shaded (TF*)" },
 };
 
 let backgroundColor = [0.0, 0.0, 0.0];
@@ -101,14 +101,13 @@ function updateCuttingPlaneControlsVisibility() {
 }
 
 function loadInput() {
+    populateRenderModeSelect();
+
     const backgroundColorInput = document.getElementById("backgroundInput");
     backgroundColor = hexToRgbArray(backgroundColorInput.value);
 
     const foregroundColorInput = document.getElementById("foregroundInput");
     foregroundColor = hexToRgbArray(foregroundColorInput.value);
-
-    // Populate render mode select dynamically
-    populateRenderModeSelect();
 
     const renderModeSelect = document.getElementById("renderModeSelect");
     renderMode = parseInt(renderModeSelect.value);
@@ -137,6 +136,7 @@ function loadInput() {
     // Update visibility and apply settings immediately
     updateForegroundColorVisibility();
     updateCuttingPlaneControlsVisibility();
+    updateIsoControlsVisibility();
     updateShaderInput({
         backgroundColor,
         foregroundColor,
@@ -173,6 +173,7 @@ function resetInputSettings() {
     // Update visibility and apply settings immediately
     updateForegroundColorVisibility();
     updateCuttingPlaneControlsVisibility();
+    updateIsoControlsVisibility();
     updateShaderInput({
         backgroundColor,
         foregroundColor,
@@ -207,6 +208,7 @@ function updateRenderMode(mode) {
     // Update visibility and apply immediately
     updateForegroundColorVisibility();
     updateCuttingPlaneControlsVisibility();
+    updateIsoControlsVisibility();
     updateShaderInput({ renderMode });
 }
 
@@ -324,5 +326,55 @@ function updateIsoFalloffMode(value) {
     // Update range indicator visualization if available
     if (window.updateRangeIndicatorFalloffMode) {
         window.updateRangeIndicatorFalloffMode();
+    }
+}
+
+function isTFStarMode(renderModeValue) {
+    // TF* modes are: FIRST_HIT_POSITIONS (4), FIRST_HIT_NORMALS (5), FIRST_HIT_SOLID_COLOR (6), PHONG_SHADED (7)
+    return renderModeValue >= 4 && renderModeValue <= 7;
+}
+
+function updateIsoControlsVisibility() {
+    const isTFStar = isTFStarMode(renderMode);
+
+    // Get iso range controls
+    const isoRangeInput = document.getElementById("isoRangeInput");
+    const isoRangeValue = document.getElementById("isoRangeValue");
+    const isoRangeField = isoRangeInput ? isoRangeInput.closest('.input-field') : null;
+
+    // Get iso falloff mode controls - find the parent input-field by looking for radio buttons
+    let isoFalloffField = null;
+    const isoFalloffInputs = document.querySelectorAll('input[name="isoFalloffMode"]');
+    if (isoFalloffInputs.length > 0) {
+        isoFalloffField = isoFalloffInputs[0].closest('.input-field');
+    }
+
+    if (isTFStar) {
+        // Hide controls for TF* modes
+        if (isoRangeField) {
+            isoRangeField.classList.add('tf-star-hidden');
+            isoRangeField.classList.remove('tf-star-visible');
+        }
+
+        if (isoFalloffField) {
+            isoFalloffField.classList.add('tf-star-hidden');
+            isoFalloffField.classList.remove('tf-star-visible');
+        }
+    } else {
+        // Show controls for non-TF* modes
+        if (isoRangeField) {
+            isoRangeField.classList.remove('tf-star-hidden');
+            isoRangeField.classList.add('tf-star-visible');
+        }
+
+        if (isoFalloffField) {
+            isoFalloffField.classList.remove('tf-star-hidden');
+            isoFalloffField.classList.add('tf-star-visible');
+        }
+    }
+
+    // Update range indicators visibility in histogram
+    if (window.updateRangeIndicatorsVisibility) {
+        window.updateRangeIndicatorsVisibility(!isTFStar);
     }
 }

@@ -470,6 +470,15 @@ h4 {
     background: #777;
 }
 
+/* Render mode visibility */
+.tf-star-hidden {
+    display: none !important;
+}
+
+.tf-star-visible {
+    display: block;
+}
+
 /* Cutting plane controls styling */
 form.cutting-plane-controls {
     display: flex;

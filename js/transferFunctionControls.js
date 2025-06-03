@@ -12,8 +12,9 @@ let draggedPoint = null; // To keep track of the point being dragged
 
 let pointToColor = null;
 
-// Global variable to track iso-range
 let currentIsoRange = 0.05;
+
+let rangeIndicatorsVisible = true;
 
 // Add this function, or integrate into createHistogram/updateHistogram
 function drawInteractivePoints(svgInner, xScale, yScale) {
@@ -68,6 +69,9 @@ function drawInteractivePoints(svgInner, xScale, yScale) {
         // Get current falloff mode (0: linear, 1: binary)
         const isLinearMode = (typeof isoFalloffMode !== 'undefined') ? isoFalloffMode === 0 : true;
 
+        // Check if range indicators should be visible
+        const shouldShow = rangeIndicatorsVisible;
+
         // Update rectangle (for binary mode)
         const rect = selection.select('.iso-range-indicator-rect')
             .attr('x', d => {
@@ -81,7 +85,7 @@ function drawInteractivePoints(svgInner, xScale, yScale) {
                 return Math.max(0, rightBound - leftBound);
             })
             .attr('height', d => yScale.range()[0] - yScale(d.y)) // Height from point to bottom
-            .style('display', isLinearMode ? 'none' : 'block');
+            .style('display', (!shouldShow || isLinearMode) ? 'none' : 'block');
 
         // Update triangle (for linear mode)
         const triangle = selection.select('.iso-range-indicator-triangle')
@@ -95,7 +99,7 @@ function drawInteractivePoints(svgInner, xScale, yScale) {
                 // Create triangle points: peak at iso point, base at bottom
                 return `${pointX},${pointY} ${leftBound},${bottomY} ${rightBound},${bottomY}`;
             })
-            .style('display', isLinearMode ? 'block' : 'none');
+            .style('display', (!shouldShow || !isLinearMode) ? 'none' : 'block');
     }
 
     // Apply initial range indicators
@@ -233,6 +237,15 @@ function drawInteractivePoints(svgInner, xScale, yScale) {
     };
 
     window.updateRangeIndicatorFalloffMode = function () {
+        if (window.svgInner) {
+            const rangeContainer = window.svgInner.select('.iso-ranges-container');
+            const currentRangeGroup = rangeContainer.selectAll('.iso-range-group');
+            updateRangeIndicators(currentRangeGroup);
+        }
+    };
+
+    window.updateRangeIndicatorsVisibility = function (visible) {
+        rangeIndicatorsVisible = visible;
         if (window.svgInner) {
             const rangeContainer = window.svgInner.select('.iso-ranges-container');
             const currentRangeGroup = rangeContainer.selectAll('.iso-range-group');
