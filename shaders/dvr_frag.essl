@@ -281,9 +281,10 @@ void transferFunctionRenderOld(vec3 rayOrigin, vec3 rayDirection, float tMin, fl
     fragColor = accumulatedColor; // Output opaque color after blending with background
 }
 
-void firstHitRender(vec3 rayOrigin, vec3 rayDirection, float tMin, float tMax, float dt) {
+void firstHitRender(vec3 rayOrigin, vec3 rayDirection, float tMin, float tMax, float dt, int renderType) {
     vec3 hitPosition = vec3(0.0);
     vec4 hitColor = vec4(0.0);
+    bool foundHit = false;
 
     for(float t = tMin; t < tMax; t += dt) {
         vec3 currentCoordinates = rayOrigin + rayDirection * t;
@@ -309,17 +310,28 @@ void firstHitRender(vec3 rayOrigin, vec3 rayDirection, float tMin, float tMax, f
 
             if(hit) {
                 hitPosition = mix(currentCoordinates, nextCoordinates, t);
-                hitColor = vec4(1.0);
+                hitColor = sampleProperties;
+                foundHit = true;
                 break; // Stop at the first hit
             }
         }
     }
 
-    vec3 surfaceNormal = calculateNormal(hitPosition);
+    if(!foundHit) {
+        discard;
+    }
 
-    fragColor = vec4(hitPosition, 1.0);
-    //fragColor = vec4(surfaceNormal * 0.5 + 0.5, hitColor.a);
-    //fragColor = vec4(hitColor.rgb, 1.0);
+    if(renderType == 4) {
+        // First-Hit Positions (TF)
+        fragColor = vec4(hitPosition, 1.0);
+    } else if(renderType == 5) {
+        // First-Hit Normals (TF)
+        vec3 surfaceNormal = calculateNormal(hitPosition);
+        fragColor = vec4(surfaceNormal * 0.5 + 0.5, 1.0);
+    } else if(renderType == 6) {
+        // First-Hit Solid Color (TF)
+        fragColor = vec4(hitColor.rgb, 1.0);
+    }
 }
 
 void main() {
@@ -347,7 +359,7 @@ void main() {
         transferFunctionRender(vTransformedCameraPosition, normalizedRayDirection, tMin, tMax, dt);
     } else if(uRenderMode == 3) {
         transferFunctionRenderOld(vTransformedCameraPosition, normalizedRayDirection, tMin, tMax, dt);
-    } else if(uRenderMode == 4) {
-        firstHitRender(vTransformedCameraPosition, normalizedRayDirection, tMin, tMax, dt);
+    } else if(uRenderMode >= 4 && uRenderMode <= 6) {
+        firstHitRender(vTransformedCameraPosition, normalizedRayDirection, tMin, tMax, dt, uRenderMode);
     }
 }

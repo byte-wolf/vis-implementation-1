@@ -13,7 +13,9 @@ const RENDER_MODES = {
         value: 3,
         label: "Accumulative (Alpha Blending) (TF)",
     },
-    FIRST_HIT: { value: 4, label: "First-Hit Rendering (TF)" },
+    FIRST_HIT_POSITIONS: { value: 4, label: "First-Hit Positions (TF)" },
+    FIRST_HIT_NORMALS: { value: 5, label: "First-Hit Normals (TF)" },
+    FIRST_HIT_SOLID_COLOR: { value: 6, label: "First-Hit Solid Color (TF)" },
 };
 
 let backgroundColor = [0.0, 0.0, 0.0];
