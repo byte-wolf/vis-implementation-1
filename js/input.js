@@ -16,13 +16,14 @@ const RENDER_MODES = {
     FIRST_HIT_POSITIONS: { value: 4, label: "First-Hit Positions (TF)" },
     FIRST_HIT_NORMALS: { value: 5, label: "First-Hit Normals (TF)" },
     FIRST_HIT_SOLID_COLOR: { value: 6, label: "First-Hit Solid Color (TF)" },
+    PHONG_SHADED: { value: 7, label: "Phong Shaded (TF)" },
 };
 
 let backgroundColor = [0.0, 0.0, 0.0];
 let foregroundColor = [1.0, 1.0, 1.0];
 let cuttingPlanePosition = [0.0, 0.0, 0.0];
 let cuttingPlaneRotation = [0.0, 0.0, 0.0];
-let renderMode = RENDER_MODES.MAX_INTENSITY_PROJECTION.value; // Default to Transfer Function mode
+let renderMode = RENDER_MODES.PHONG_SHADED.value; // Default to Transfer Function mode
 let cuttingPlaneEnabled = false; // Default to disabled
 let cuttingPlaneFlipped = false; // Default to not flipped
 let lastCuttingPlaneMode = "none"; // Default to disabled cutting plane
@@ -235,10 +236,10 @@ function hexToRgb(hex) {
     var result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
     return result
         ? {
-              r: parseInt(result[1], 16),
-              g: parseInt(result[2], 16),
-              b: parseInt(result[3], 16),
-          }
+            r: parseInt(result[1], 16),
+            g: parseInt(result[2], 16),
+            b: parseInt(result[3], 16),
+        }
         : null;
 }
 
