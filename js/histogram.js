@@ -14,6 +14,11 @@ let lastVolume;
 let cachedBins = null; // Cache the histogram bins
 let cachedMaxValue = 0; // Cache the max value for scaling
 
+let worker = new Worker("js/histogramWorker.js");
+worker.onmessage = (event) => {
+    updateHistogramD3(event.data.voxels);
+}
+
 /**
  * Updates only the Y-axis scale and bar heights without reprocessing data
  */
@@ -40,11 +45,6 @@ function updateBarsScale() {
         .attr("height", (d, i) => yScale(cachedBins[i]?.length || 0));
 }
 
-/**
- * Updates the histogram with the given volume data.
- *
- * @param {Volume} volume
- */
 function updateHistogram() {
     const {
         volume,
@@ -56,43 +56,31 @@ function updateHistogram() {
         flipped,
     } = getCuttingPlaneProps();
 
+    if (!enabled) {
+        updateHistogramD3(volume.voxels);
+        return;
+    }
+
     if (flipped) {
         rotation.x *= -1;
         rotation.y *= -1;
         rotation.z *= -1;
     }
 
-    let data = null;
+    worker.postMessage({
+        volume,
+        position,
+        rotation,
+    });
+}
 
-    if (enabled) {
-        let newIdx = 0;
-        data = new Float32Array(volume.width * volume.height * volume.depth);
-        for (let i = 0; i < volume.width; i++) {
-            for (let j = 0; j < volume.height; j++) {
-                for (let k = 0; k < volume.depth; k++) {
-                    const idx = i + j * volume.width + k * volume.width * volume.height;
-                    const voxel = volume.voxels[idx];
-
-                    const x = i - volume.width * 0.5;
-                    const y = j - volume.height * 0.5;
-                    const z = k - volume.depth * 0.5;
-
-                    const d = new THREE.Vector3(x - position.x, y - position.y, z - position.z)
-                        .dot(new THREE.Vector3(rotation.x, rotation.y, rotation.z));
-                    
-                    if (d > 0) {
-                        data[newIdx] = voxel;
-                        newIdx++;
-                    }
-                }
-            }
-        }
-        data = data.subarray(0, newIdx);
-    } else {
-        data = volume.voxels;
-    }
-
-    lastVolume = volume;
+/**
+ * Updates the histogram with the given volume data.
+ *
+ * @param {Volume} volume
+ */
+function updateHistogramD3(voxels) {
+    const data = voxels;
 
     const container = d3.select(`#${containerId}`);
 
