@@ -7,13 +7,9 @@ let interactivePoints = [
     { id: "iso2", x: 0.3, y: 1.0, color: "#ffffff" }, // White
     { id: "iso3", x: 0.48, y: 0.5, color: "#0000ff" }, // Blue
 ];
-
 let draggedPoint = null;
-
 let pointToColor = null;
-
 let currentIsoRange = 0.05;
-
 let rangeIndicatorsVisible = true;
 
 /**
@@ -108,21 +104,6 @@ function drawInteractivePoints(svgInner, xScale, yScale) {
 
     pointColorPicker.addEventListener("input", onPointColorPickerInput);
 
-    // Function to update both group transform and line attributes
-    function updatePointVisuals(selection) {
-        selection.attr(
-            "transform",
-            (d) => `translate(${xScale(d.x)}, ${yScale(d.y)})`
-        );
-
-        selection
-            .select(".point-to-axis-line")
-            .attr("x1", 0)
-            .attr("y1", 0)
-            .attr("x2", 0)
-            .attr("y2", (d) => yScale(yScale.domain()[0]) - yScale(d.y));
-    }
-
     // Apply initial positions and line attributes
     updatePointVisuals(pointsGroup);
 
@@ -187,6 +168,24 @@ function drawInteractivePoints(svgInner, xScale, yScale) {
 }
 
 /**
+ * Update the visuals of the point.
+ * @param {d3.Selection} selection - The selection of the point.
+ */
+function updatePointVisuals(selection) {
+    selection.attr(
+        "transform",
+        (d) => `translate(${xScale(d.x)}, ${yScale(d.y)})`
+    );
+
+    selection
+        .select(".point-to-axis-line")
+        .attr("x1", 0)
+        .attr("y1", 0)
+        .attr("x2", 0)
+        .attr("y2", (d) => yScale(yScale.domain()[0]) - yScale(d.y));
+}
+
+/**
  * Update the iso surface color when the value of the color picker changes.
  * @param {Event} event - The event of the color input.
  */
@@ -229,7 +228,6 @@ function updateRangeIndicators() {
         return;
     }
 
-    // Get current falloff mode (0: linear, 1: binary)
     const isLinearMode =
         isoFalloffMode !== undefined ? isoFalloffMode === 0 : true;
 
@@ -333,18 +331,16 @@ function renderIsoPointsList() {
         pointItem.className = "iso-point-item";
         pointItem.innerHTML = `
             <div class="iso-point-info">
-                <div class="iso-point-color" style="background-color: ${
-                    point.color
-                }; cursor: pointer;" data-point-id="${point.id}"></div>
+                <div class="iso-point-color" style="background-color: ${point.color
+            }; cursor: pointer;" data-point-id="${point.id}"></div>
                 <div class="iso-point-info-container">
                     <div class="iso-point-label">Surface ${index + 1}</div>
                     <div class="iso-point-coords">x: ${point.x.toFixed(
-                        2
-                    )}, y: ${point.y.toFixed(2)}</div>
+                2
+            )}, y: ${point.y.toFixed(2)}</div>
                 </div>
             </div>
-            <button type="button" class="iso-point-remove" data-point-id="${
-                point.id
+            <button type="button" class="iso-point-remove" data-point-id="${point.id
             }" ${interactivePoints.length <= 1 ? "disabled" : ""}>
                 X
             </button>
