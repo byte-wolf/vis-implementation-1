@@ -3,7 +3,6 @@ const MARGIN = { top: 40, right: 30, bottom: 60, left: 80 };
 let noDataGroup;
 
 let containerId;
-let binCount = 100;
 
 let width;
 let height;
@@ -15,9 +14,7 @@ let cachedBins = null; // Cache the histogram bins
 let cachedMaxValue = 0; // Cache the max value for scaling
 
 let worker = new Worker("js/histogramWorker.js");
-worker.onmessage = (event) => {
-    updateHistogramD3(event.data.voxels);
-}
+worker.addEventListener('message', updateHistogramD3);
 
 /**
  * Updates only the Y-axis scale and bar heights without reprocessing data
@@ -56,21 +53,20 @@ function updateHistogram() {
         flipped,
     } = getCuttingPlaneProps();
 
-    if (!enabled) {
-        updateHistogramD3(volume.voxels);
-        return;
-    }
-
     if (flipped) {
         rotation.x *= -1;
         rotation.y *= -1;
         rotation.z *= -1;
     }
 
+    const innerWidth = width - MARGIN.left - MARGIN.right;
+
     worker.postMessage({
+        enabled,
         volume,
         position,
         rotation,
+        innerWidth,
     });
 }
 
@@ -79,26 +75,16 @@ function updateHistogram() {
  *
  * @param {Volume} volume
  */
-function updateHistogramD3(voxels) {
-    const data = voxels;
+function updateHistogramD3(event) {
+    const { bins } = event.data;
 
     const container = d3.select(`#${containerId}`);
 
-    const innerWidth = width - MARGIN.left - MARGIN.right;
     const innerHeight = height - MARGIN.top - MARGIN.bottom;
 
     const inner = container.select("svg").select("g");
 
-    const x = d3.scaleLinear().domain([0, 1]).range([0, innerWidth]).nice();
-
-    const histogramLayout = d3
-        .histogram()
-        .value((d) => d)
-        .domain(x.domain())
-        .thresholds(x.ticks(binCount));
-
-    const bins = histogramLayout(data);
-
+    console.time("updateHistogramD3");
     // Cache the bins and max value for future scale updates
     cachedBins = bins;
 
@@ -125,6 +111,7 @@ function updateHistogramD3(voxels) {
         .attr("height", (d) =>
             yScale(d.length || 0)
         );
+    console.timeEnd("updateHistogramD3");
 }
 
 /**
