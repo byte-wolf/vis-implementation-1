@@ -1,11 +1,38 @@
 ## How to Use
 
-Load one of the provided volume files through the GUI. 
-Rotate the orbit camera around the bounding box using the left mouse button. Zoom using the scroll wheel. 
-In the render settings, foreground and background color can be adjusted.
-All of these settings must be saved before showing effect.
-The Auto-rotate camera checkbox automatically rotates the volume rendering.
-The Y Axis scale factor setting only affects the histogram and not the volume rendering.
+
+### Input file and render mode
+
+- Load one of the provided volume files through the GUI. 
+- Change the render mode using the drop down menu.
+- Render modes with _TF_ can be adjusted using the transfer function above the histogram.
+- Render modes with _TF*_ also use the transfer fuction, but the Iso-surface range and falloff mode can't be adjusted.
+
+### View and camera settings
+
+- Adjust the background color using the color picker.
+- Adjust the foreground color using the color picker (only available in the MIP mode).
+- Auto-rotation of the camera can be toggled via the checkbox.
+
+### Cutting plane settings
+
+- To use the cutting plane, first enable the cutting plane via the checkbox.
+- Then, the cutting plane gets rendered in the 3D view.
+- The cutting plane controls are only visible when the cutting plane is active.
+- _Hidden_ makes the controls invisible, but the cutting plane is still rendered.
+- _Translate_ and _Rotate_ can be used to manipulate the position of the cutting plane.
+- With the checkbox, the cutting plane can be flipped so that the other side of the plane is cut.
+
+### Histogram and transfer function settings
+
+- With the histogram scale factor slider, the y-axis of the histogram can be scaled. (1 is equidistant steps)
+- When a mode with _TF_ is selected, the iso surface range and falloff mode can be adjusted. (changes also visible in the transfer function)
+
+### Iso points
+
+- Up to 5 points can be added for the transfer function.
+- The color can be changed by pressing on the box next to the name or directly on the point in transfer function.
+- The position and intensity of the points can be adjusted by dragging directly in the transfer function interface.
 
 
 ## Framework Description
