@@ -106,7 +106,6 @@ async function resetVis() {
             planeControlsObject.position,
             planeControlsObject.getWorldDirection(new THREE.Vector3())
         );
-        updateCuttingPlane(planeControlsObject.position, planeNormal);
     });
 
     planeControls.addEventListener("mouseDown", () => {
