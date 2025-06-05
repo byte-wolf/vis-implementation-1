@@ -1,17 +1,13 @@
 const MARGIN = { top: 40, right: 30, bottom: 60, left: 80 };
 
 let noDataGroup;
-
 let containerId;
-
 let width;
 let height;
-
 let yAxisScale = 0.3;
-
 let lastVolume;
-let cachedBins = null; // Cache the histogram bins
-let cachedMaxValue = 0; // Cache the max value for scaling
+let cachedBins = null;
+let cachedMaxValue = 0;
 
 let worker = new Worker("js/histogramWorker.js");
 worker.addEventListener('message', updateHistogramD3);
@@ -38,15 +34,18 @@ function updateBarsScale() {
     inner
         .selectAll("rect.histogram-bar")
         .transition()
-        .duration(200) // Shorter duration for smoother experience
+        .duration(200)
         .attr("height", (d, i) => yScale(cachedBins[i]?.length || 0));
 }
 
+/**
+ * Update the histogram based on the cutting plane position and rotation.
+ */
 function updateHistogram() {
     const {
         volume,
         position,
-        rotation, // normal vector
+        rotation,
     } = getVolumeCuttingPlaneProps();
     const {
         enabled,
@@ -85,13 +84,13 @@ function updateHistogramD3(event) {
     const inner = container.select("svg").select("g");
 
     console.time("updateHistogramD3");
-    // Cache the bins and max value for future scale updates
+
     cachedBins = bins;
 
     const validBins = bins.filter((b) => typeof b.length === "number");
 
     const maxValue = d3.sum(validBins, (d) => d.length);
-    cachedMaxValue = maxValue; // Cache for scale updates
+    cachedMaxValue = maxValue;
 
     const yScale = d3
         .scalePow()
@@ -111,6 +110,7 @@ function updateHistogramD3(event) {
         .attr("height", (d) =>
             yScale(d.length || 0)
         );
+
     console.timeEnd("updateHistogramD3");
 }
 
@@ -163,8 +163,6 @@ function createHistogram(targetId, numBins = 100) {
     // Y Axis
     const y = d3
         .scaleLinear()
-        /* .scalePow()
-        .exponent(yAxisScale) */
         .domain([0, 1])
         .range([innerHeight, 0]);
     inner
@@ -194,44 +192,29 @@ function createHistogram(targetId, numBins = 100) {
         .attr("height", (d) => 0)
         .style("fill", "#ffffff88");
 
-    noDataGroup = inner.append("g").attr("class", "no-data-container"); // Eine Klasse für die Gruppe
+    noDataGroup = inner.append("g").attr("class", "no-data-container");
 
     noDataGroup
         .append("text")
         .attr("class", "no-data-message")
         .attr("x", innerWidth / 2)
-        .attr("y", innerHeight / 2)
+        .attr("y", innerHeight + innerHeight / 2)
         .attr("text-anchor", "middle")
         .attr("dominant-baseline", "middle")
         .text("No data");
 
     drawInteractivePoints(inner, x, y);
-
 }
 
+/**
+ * Update the Y-axis scale.
+ * @param {number} value - The new Y-axis scale value.
+ */
 function updateYAxisScale(value) {
-    yAxisScale = +value;
+    yAxisScale = value;
 
     document.getElementById("scaleValue").value = yAxisScale;
     document.getElementById("scaleRange").value = yAxisScale;
-
-    const inner = d3.select(`#${containerId}`).select("svg").select("g");
-
-    const innerHeight = height - MARGIN.top - MARGIN.bottom;
-
-    const y = d3
-        .scaleLinear()
-        /* .scalePow()
-        .exponent(yAxisScale) */
-        .domain([0, 1])
-        .range([innerHeight, 0]);
-
-    inner.select(".y-axis").remove();
-
-    inner
-        .append("g")
-        .attr("class", "y-axis")
-        .call(d3.axisLeft(y).tickFormat(d3.format(".1f")));
 
     updateBarsScale();
 

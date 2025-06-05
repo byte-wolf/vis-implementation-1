@@ -33,35 +33,23 @@ let isoFalloffMode = 0;
 function loadInput() {
     populateRenderModeSelect();
 
-    const backgroundColorInput = document.getElementById("backgroundInput");
-    backgroundColor = hexToRgbArray(backgroundColorInput.value);
+    renderMode = parseInt(document.getElementById("renderModeSelect").value);
 
-    const foregroundColorInput = document.getElementById("foregroundInput");
-    foregroundColor = hexToRgbArray(foregroundColorInput.value);
+    backgroundColor = hexToRgbArray(document.getElementById("backgroundInput").value);
 
-    const renderModeSelect = document.getElementById("renderModeSelect");
-    renderMode = parseInt(renderModeSelect.value);
+    foregroundColor = hexToRgbArray(document.getElementById("foregroundInput").value);
 
-    const cuttingPlaneEnabledInput = document.getElementById(
-        "cutting-plane-enabled"
-    );
-    cuttingPlaneEnabled = cuttingPlaneEnabledInput.checked;
+    onAutoRotateChange(document.getElementById("auto-rotate").checked);
 
-    const cuttingPlaneFlippedInput = document.getElementById(
-        "cutting-plane-flipped"
-    );
-    cuttingPlaneFlipped = cuttingPlaneFlippedInput.checked;
+    cuttingPlaneEnabled = document.getElementById("cutting-plane-enabled").checked;
 
-    const autoRotateInput = document.getElementById("auto-rotate");
-    onAutoRotateChange(autoRotateInput.checked);
+    cuttingPlaneFlipped = document.getElementById("cutting-plane-flipped").checked;
 
-    const isoSurfaceRangeInput = document.getElementById("isoRangeValue");
-    updateIsoRange(parseFloat(isoSurfaceRangeInput.value));
+    updateYAxisScale(parseFloat(document.getElementById("scaleValue").value));
 
-    const isoFalloffModeInput = document.querySelector(
-        "input[name='isoFalloffMode']:checked"
-    );
-    updateIsoFalloffMode(parseInt(isoFalloffModeInput.value));
+    updateIsoRange(parseFloat(document.getElementById("isoRangeValue").value));
+
+    updateIsoFalloffMode(parseInt(document.querySelector("input[name='isoFalloffMode']:checked").value));
 
     updateForegroundColorVisibility();
     updateCuttingPlaneControlsVisibility();
@@ -316,7 +304,7 @@ function updateIsoFalloffMode(value) {
 
 /**
  * Get the cutting plane properties.
- * @returns {Object} The cutting plane properties.
+ * @returns {{enabled: boolean, flipped: boolean}} The cutting plane properties.
  */
 function getCuttingPlaneProps() {
     return {

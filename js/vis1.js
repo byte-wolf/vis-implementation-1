@@ -138,14 +138,8 @@ async function resetVis() {
         new THREE.Vector3(volume.width, volume.height, volume.depth)
     );
     raycastShader.setUniform("uCameraPosition", camera.position);
-    raycastShader.setUniform(
-        "uBackgroundColor",
-        backgroundColor ?? [0.0, 0.0, 0.0]
-    );
-    raycastShader.setUniform(
-        "uForegroundColor",
-        foregroundColor ?? [1.0, 1.0, 1.0]
-    );
+    raycastShader.setUniform("uBackgroundColor", [0.0, 0.0, 0.0]);
+    raycastShader.setUniform("uForegroundColor", [1.0, 1.0, 1.0]);
 
     await raycastShader.load();
 
@@ -158,7 +152,6 @@ async function resetVis() {
     raycastMaterial.side = THREE.BackSide;
 
     raycastMesh = new THREE.Mesh(boxGeometry, raycastMaterial);
-    //raycastMesh.scale.set(volume.width, volume.height, volume.depth);
     scene.add(raycastMesh);
 
     // our camera orbits around an object centered at (0,0,0)
@@ -238,12 +231,10 @@ function updateShaderInput(settings) {
             );
     }
 
-    // Set render mode uniform
     if (settings.renderMode !== undefined) {
         raycastShader.setUniform("uRenderMode", settings.renderMode);
     }
 
-    // Set cutting plane enabled uniform
     if (settings.cuttingPlaneEnabled !== undefined) {
         raycastShader.setUniform(
             "uCuttingPlaneEnabled",
@@ -267,17 +258,17 @@ function updateShaderInput(settings) {
     }
 
     if (settings.cuttingPlaneRotation !== undefined) {
-        raycastShader.setUniform(
-            "uCuttingPlaneRotation",
-            new THREE.Vector3(
-                settings.cuttingPlaneRotation[0] *
-                    (isCuttingPlaneFlipped ? -1 : 1),
-                settings.cuttingPlaneRotation[1] *
-                    (isCuttingPlaneFlipped ? -1 : 1),
-                settings.cuttingPlaneRotation[2] *
-                    (isCuttingPlaneFlipped ? -1 : 1)
-            )
+        const rotation = new THREE.Vector3(
+            settings.cuttingPlaneRotation[0],
+            settings.cuttingPlaneRotation[1],
+            settings.cuttingPlaneRotation[2]
         );
+
+        if (isCuttingPlaneFlipped) {
+            rotation.multiplyScalar(-1);
+        }
+
+        raycastShader.setUniform("uCuttingPlaneRotation", rotation);
     }
 
     if (settings.isoFalloffMode !== undefined) {
@@ -299,7 +290,7 @@ function updateShaderInput(settings) {
 }
 
 /**
- *
+ * Set the iso points.
  * @param {{x: number, y: number, color: string}[]} isoPoints
  */
 function setIsoPoints(isoPoints) {
@@ -377,6 +368,10 @@ function setAutoRotate(value) {
     orbitCamera.update();
 }
 
+/**
+ * Update the cutting plane controls mode.
+ * @param {'translate' | 'rotate' | 'none'} mode - The mode to update the cutting plane controls to.
+ */
 function updatePlaneControlsMode(mode) {
     if (mode === "translate") {
         planeControls.attach(planeControlsObject);
@@ -394,6 +389,10 @@ function updatePlaneControlsMode(mode) {
     requestAnimationFrame(paint);
 }
 
+/**
+ * Get the volume cutting plane properties.
+ * @returns {{volume: Volume, position: THREE.Vector3, rotation: THREE.Vector3}} The volume cutting plane properties.
+ */
 function getVolumeCuttingPlaneProps() {
     return {
         volume,
