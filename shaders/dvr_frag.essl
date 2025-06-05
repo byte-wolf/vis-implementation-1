@@ -49,7 +49,7 @@ out vec4 fragColor;
 float calculateSampleDistance(vec3 rayDirection) {
     float epsilon = 0.00001;
     vec3 absoluteScaledRayDirection = (abs(vRayDirection)) * uVolumeSize;
-    float minComponent = min(absoluteScaledRayDirection.x, min(absoluteScaledRayDirection.y, absoluteScaledRayDirection.z));
+    float minComponent = max(absoluteScaledRayDirection.x, max(absoluteScaledRayDirection.y, absoluteScaledRayDirection.z));
 
     if(minComponent > epsilon) {
         return 1.0 / minComponent;
@@ -447,8 +447,8 @@ void main() {
 
     tMin = max(tMin, 0.0);
 
-    float dt = 0.002;
-    //float dt = calculateSampleDistance(normalizedRayDirection);
+    //float dt = 0.002;
+    float dt = calculateSampleDistance(normalizedRayDirection);
     //tMin += random(vTransformedPosition.xy) * dt / 2.0;
 
     if(uRenderMode == 0) {
