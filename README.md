@@ -49,13 +49,3 @@ Recommended code editor: Visual Studio Code (free): https://code.visualstudio.co
 Install syntax highlighting for shading languages: https://marketplace.visualstudio.com/items?itemName=slevesque.shader
 
 Enable syntax highlighting: open shader file --> in the bar on the bottom right, switch from plain text to GLSL.  
-
-
-## Todo
-
-Simon:
-- [ ] Switch for render mode (=> settings based on mode)
-- [ ] Cutting plane reverse switch
-
-Fabian:
-- [ ] Dynamic histogram updates (update the histogram dynamically to reflect visible voxels based on the visible volume) 
