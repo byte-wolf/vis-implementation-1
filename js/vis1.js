@@ -60,7 +60,6 @@ function init() {
     if (fileInput.files[0]) {
         readFile();
     }
-
 }
 
 /**
@@ -105,8 +104,9 @@ async function resetVis() {
     planeControls.addEventListener("change", () => {
         updateCuttingPlane(
             planeControlsObject.position,
-            planeControlsObject.getWorldDirection(new THREE.Vector3()),
+            planeControlsObject.getWorldDirection(new THREE.Vector3())
         );
+        updateCuttingPlane(planeControlsObject.position, planeNormal);
     });
 
     planeControls.addEventListener("mouseDown", () => {
@@ -150,7 +150,11 @@ async function resetVis() {
 
     await raycastShader.load();
 
-    const boxGeometry = new THREE.BoxGeometry(volume.width, volume.height, volume.depth);
+    const boxGeometry = new THREE.BoxGeometry(
+        volume.width,
+        volume.height,
+        volume.depth
+    );
     const raycastMaterial = raycastShader.material;
     raycastMaterial.side = THREE.BackSide;
 
@@ -170,7 +174,9 @@ async function resetVis() {
     loadInput();
 
     // Initialize cutting plane position and rotation
-    const initialPlaneNormal = planeControlsObject.getWorldDirection(new THREE.Vector3());
+    const initialPlaneNormal = planeControlsObject.getWorldDirection(
+        new THREE.Vector3()
+    );
     updateCuttingPlane(planeControlsObject.position, initialPlaneNormal);
 
     // init paint loop
@@ -240,7 +246,10 @@ function updateShaderInput(settings) {
 
     // Set cutting plane enabled uniform
     if (settings.cuttingPlaneEnabled !== undefined) {
-        raycastShader.setUniform("uCuttingPlaneEnabled", settings.cuttingPlaneEnabled ? 1 : 0);
+        raycastShader.setUniform(
+            "uCuttingPlaneEnabled",
+            settings.cuttingPlaneEnabled ? 1 : 0
+        );
     }
 
     if (settings.cuttingPlaneFlipped !== undefined) {
@@ -253,7 +262,7 @@ function updateShaderInput(settings) {
             new THREE.Vector3(
                 settings.cuttingPlanePosition[0],
                 settings.cuttingPlanePosition[1],
-                settings.cuttingPlanePosition[2],
+                settings.cuttingPlanePosition[2]
             )
         );
     }
@@ -262,9 +271,12 @@ function updateShaderInput(settings) {
         raycastShader.setUniform(
             "uCuttingPlaneRotation",
             new THREE.Vector3(
-                settings.cuttingPlaneRotation[0] * (isCuttingPlaneFlipped ? -1 : 1),
-                settings.cuttingPlaneRotation[1] * (isCuttingPlaneFlipped ? -1 : 1),
-                settings.cuttingPlaneRotation[2] * (isCuttingPlaneFlipped ? -1 : 1),
+                settings.cuttingPlaneRotation[0] *
+                    (isCuttingPlaneFlipped ? -1 : 1),
+                settings.cuttingPlaneRotation[1] *
+                    (isCuttingPlaneFlipped ? -1 : 1),
+                settings.cuttingPlaneRotation[2] *
+                    (isCuttingPlaneFlipped ? -1 : 1)
             )
         );
     }
@@ -278,7 +290,7 @@ function updateShaderInput(settings) {
             new THREE.Color().setRGB(
                 settings.backgroundColor[0],
                 settings.backgroundColor[1],
-                settings.backgroundColor[2],
+                settings.backgroundColor[2]
             ),
             1
         );
@@ -288,8 +300,8 @@ function updateShaderInput(settings) {
 }
 
 /**
- * 
- * @param {{x: number, y: number, color: string}[]} isoPoints 
+ *
+ * @param {{x: number, y: number, color: string}[]} isoPoints
  */
 function setIsoPoints(isoPoints) {
     if (!isoPoints || !Array.isArray(isoPoints)) {
@@ -301,72 +313,52 @@ function setIsoPoints(isoPoints) {
 }
 
 /**
- * Update the transfer function uniforms based on the provided isosurface points.
+ * Update the transfer function uniforms based on the provided iso surface points.
  */
 function updateTransferFunctionUniforms() {
-    // --- Update Transfer Function Uniforms ---
-    const MAX_ISO_POINTS_JS = 4; // Must match shader and RaycastShader class
+    const MAX_ISO_POINTS_JS = 4;
     const numPoints = Math.min(isoSurfacePoints.length, MAX_ISO_POINTS_JS);
 
     raycastShader.setUniform("uNumIsoPoints", numPoints);
 
     const isoValues = new Array(MAX_ISO_POINTS_JS).fill(1.0);
     const isoOpacities = new Array(MAX_ISO_POINTS_JS).fill(1.0);
-    const isoColors = new Array(MAX_ISO_POINTS_JS).fill(new THREE.Vector3(0, 0, 0)); // This is an array of THREE.Vector3
+    const isoColors = new Array(MAX_ISO_POINTS_JS).fill(
+        new THREE.Vector3(0.0, 0.0, 0.0)
+    );
 
-    // Sort points by iso-value (density) - important for some TF evaluation strategies,
-    // though for simple isosurfaces it might not be strictly necessary for the current shader.
-    // Good practice though.
     const sortedPoints = [...isoSurfacePoints].sort((a, b) => a.x - b.x);
 
     for (let idx = 0; idx < MAX_ISO_POINTS_JS; idx++) {
         if (idx < numPoints) {
             const point = sortedPoints[idx];
-            isoValues[idx] = point.x;    // iso-value (density)
-            isoOpacities[idx] = point.y; // opacity
-            // point.color is assumed to be [r, g, b] array from hexToRgbArray
+            isoValues[idx] = point.x;
+            isoOpacities[idx] = point.y;
             isoColors[idx] = new THREE.Vector3(
                 point.color[0],
                 point.color[1],
                 point.color[2]
             );
-            // console.log("Point color [", idx, "]:", point.color, isoColors);
-            raycastShader.setUniform(
-                "uIsoValues",
-                isoValues
-            );
-            raycastShader.setUniform(
-                "uIsoOpacities",
-                isoOpacities
-            );
-            raycastShader.setUniform(
-                "uIsoColors",
-                isoColors
-            );
+            raycastShader.setUniform("uIsoValues", isoValues);
+            raycastShader.setUniform("uIsoOpacities", isoOpacities);
+            raycastShader.setUniform("uIsoColors", isoColors);
         } else {
-            // Pad unused slots if necessary (e.g., with non-contributing values)
-            isoValues[idx] = -1.0; // Or some other out-of-range value
+            isoValues[idx] = -1.0;
             isoOpacities[idx] = 0.0;
             isoColors[idx] = new THREE.Vector3(0, 0, 0);
 
-            raycastShader.setUniform(
-                "uIsoValues",
-                isoValues
-            );
-            raycastShader.setUniform(
-                "uIsoOpacities",
-                isoOpacities
-            );
-            raycastShader.setUniform(
-                "uIsoColors",
-                isoColors
-            );
+            raycastShader.setUniform("uIsoValues", isoValues);
+            raycastShader.setUniform("uIsoOpacities", isoOpacities);
+            raycastShader.setUniform("uIsoColors", isoColors);
         }
     }
 
-    // Update the uIsoRange using the current iso-range value
     if (currentIsoRange !== undefined) {
         raycastShader.setUniform("uIsoRange", currentIsoRange);
+    }
+
+    if (orbitCamera === undefined) {
+        return;
     }
 
     requestAnimationFrame(paint);
@@ -408,5 +400,5 @@ function getVolumeCuttingPlaneProps() {
         volume,
         position: planeControlsObject.position,
         rotation: planeControlsObject.getWorldDirection(new THREE.Vector3()),
-    }
+    };
 }

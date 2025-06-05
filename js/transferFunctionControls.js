@@ -1,14 +1,14 @@
-// At the top of your script, or in a relevant scope
-let interactivePoints = [
+/* let interactivePoints = [
     { id: 'iso1', x: 0.15, y: 0.5, color: "#ff8f6a", label: "Surface 1" }, // Density 0.2, Opacity 0.8, Cyan
     { id: 'iso2', x: 0.3, y: 1.0, color: "#F9F6EE", label: "Surface 2" }  // Density 0.7, Opacity 0.5, Magenta
+]; */
+let interactivePoints = [
+    { id: "iso1", x: 0.1, y: 0.5, color: "#ff8246" }, // Orange
+    { id: "iso2", x: 0.3, y: 1.0, color: "#ffffff" }, // White
+    { id: "iso3", x: 0.48, y: 0.5, color: "#0000ff" }, // Blue
 ];
-interactivePoints = [
-    { id: 'iso1', x: 0.1, y: 0.5, color: "#ff8246", label: "Surface 1" }, // Orange
-    { id: 'iso2', x: 0.3, y: 1.0, color: "#ffffff", label: "Surface 2" }, // White
-    { id: 'iso3', x: 0.48, y: 0.5, color: "#0000ff", label: "Surface 2" }, // Blue
-];
-let draggedPoint = null; // To keep track of the point being dragged
+
+let draggedPoint = null;
 
 let pointToColor = null;
 
@@ -16,327 +16,362 @@ let currentIsoRange = 0.05;
 
 let rangeIndicatorsVisible = true;
 
-// Add this function, or integrate into createHistogram/updateHistogram
+/**
+ * Draw the interactive points and the range indicators based on the current iso points.
+ * @param {d3.Selection} svgInner - The svg element.
+ * @param {d3.ScaleLinear} xScale - The x scale.
+ * @param {d3.ScaleLinear} yScale - The y scale.
+ */
 function drawInteractivePoints(svgInner, xScale, yScale) {
-    // Store references globally for later use
     window.svgInner = svgInner;
     window.xScale = xScale;
     window.yScale = yScale;
 
+    const pointColorPicker = document.getElementById("pointColorPicker");
+
     setIsoPoints(pointsToIsoSurfacePoints(interactivePoints));
 
-    const pointColorPicker = document.getElementById('pointColorPicker');
-
-    // Create a dedicated container for iso-range indicators (below everything else)
-    let rangeContainer = svgInner.select('.iso-ranges-container');
+    // Range indicators
+    let rangeContainer = svgInner.select(".iso-ranges-container");
     if (rangeContainer.empty()) {
-        rangeContainer = svgInner.insert('g', ':first-child')
-            .attr('class', 'iso-ranges-container');
+        rangeContainer = svgInner
+            .insert("g", ":first-child")
+            .attr("class", "iso-ranges-container");
     }
 
-    // Draw iso-range indicators first (so they appear behind the points)
-    const rangeGroup = rangeContainer.selectAll('.iso-range-group')
-        .data(interactivePoints, d => d.id + '-range')
-        .join(
-            enter => {
-                const group = enter.append('g')
-                    .attr('class', 'iso-range-group');
+    const rangeGroup = rangeContainer
+        .selectAll(".iso-range-group")
+        .data(interactivePoints, (d) => d.id + "-range")
+        .join((enter) => {
+            const group = enter.append("g").attr("class", "iso-range-group");
 
-                // Add rectangle for binary mode
-                group.append('rect')
-                    .attr('class', 'iso-range-indicator-rect')
-                    .style('fill', d => d.color)
-                    .style('opacity', 0.15)
-                    .style('stroke', d => d.color)
-                    .style('stroke-width', 1)
-                    .style('stroke-opacity', 0.3);
+            // Add rectangle for binary mode
+            group
+                .append("rect")
+                .attr("class", "iso-range-indicator-rect")
+                .style("fill", (d) => d.color)
+                .style("opacity", 0.15)
+                .style("stroke", (d) => d.color)
+                .style("stroke-width", 1)
+                .style("stroke-opacity", 0.3);
 
-                // Add triangle/polygon for linear mode
-                group.append('polygon')
-                    .attr('class', 'iso-range-indicator-triangle')
-                    .style('fill', d => d.color)
-                    .style('opacity', 0.15)
-                    .style('stroke', d => d.color)
-                    .style('stroke-width', 1)
-                    .style('stroke-opacity', 0.3);
+            // Add triangle/polygon for linear mode
+            group
+                .append("polygon")
+                .attr("class", "iso-range-indicator-triangle")
+                .style("fill", (d) => d.color)
+                .style("opacity", 0.15)
+                .style("stroke", (d) => d.color)
+                .style("stroke-width", 1)
+                .style("stroke-opacity", 0.3);
 
-                return group;
-            }
-        );
+            return group;
+        });
 
-    // Function to update range indicators
-    function updateRangeIndicators(selection) {
-        // Get current falloff mode (0: linear, 1: binary)
-        const isLinearMode = (typeof isoFalloffMode !== 'undefined') ? isoFalloffMode === 0 : true;
-
-        // Check if range indicators should be visible
-        const shouldShow = rangeIndicatorsVisible;
-
-        // Update rectangle (for binary mode)
-        const rect = selection.select('.iso-range-indicator-rect')
-            .attr('x', d => {
-                const leftBound = Math.max(0, xScale(d.x - currentIsoRange));
-                return leftBound;
-            })
-            .attr('y', d => yScale(d.y)) // Start from point's y position
-            .attr('width', d => {
-                const leftBound = Math.max(0, xScale(d.x - currentIsoRange));
-                const rightBound = Math.min(xScale.range()[1], xScale(d.x + currentIsoRange));
-                return Math.max(0, rightBound - leftBound);
-            })
-            .attr('height', d => yScale.range()[0] - yScale(d.y)) // Height from point to bottom
-            .style('display', (!shouldShow || isLinearMode) ? 'none' : 'block');
-
-        // Update triangle (for linear mode)
-        const triangle = selection.select('.iso-range-indicator-triangle')
-            .attr('points', d => {
-                const pointX = xScale(d.x);
-                const pointY = yScale(d.y);
-                const leftBound = Math.max(0, xScale(d.x - currentIsoRange));
-                const rightBound = Math.min(xScale.range()[1], xScale(d.x + currentIsoRange));
-                const bottomY = yScale.range()[0];
-
-                // Create triangle points: peak at iso point, base at bottom
-                return `${pointX},${pointY} ${leftBound},${bottomY} ${rightBound},${bottomY}`;
-            })
-            .style('display', (!shouldShow || !isLinearMode) ? 'none' : 'block');
-    }
-
-    // Apply initial range indicators
     updateRangeIndicators(rangeGroup);
 
-    const pointsGroup = svgInner.selectAll('.interactive-point-group')
-        .data(interactivePoints, d => d.id)
-        .join(
-            enter => {
-                const group = enter.append('g')
-                    .attr('class', 'interactive-point-group')
-                    .style('cursor', 'grab'); // Indicate draggability
+    const pointsGroup = svgInner
+        .selectAll(".interactive-point-group")
+        .data(interactivePoints, (d) => d.id)
+        .join((enter) => {
+            const group = enter
+                .append("g")
+                .attr("class", "interactive-point-group")
+                .style("cursor", "grab");
 
-                group.append('line')
-                    .attr('class', 'point-to-axis-line')
-                    .style('stroke', d => '#ffffffaa') // Or a fixed color like 'gray'
-                    .style('stroke-width', 2);
+            group
+                .append("line")
+                .attr("class", "point-to-axis-line")
+                .style("stroke", (d) => "#ffffffaa")
+                .style("stroke-width", 2);
 
-                group.append('circle')
-                    .attr('class', 'interactive-point')
-                    .attr('r', 8) // Radius of the point
-                    .style('fill', d => d.color)
-                    .style('stroke', 'white')
-                    .style('stroke-width', 2);
+            group
+                .append("circle")
+                .attr("class", "interactive-point")
+                .attr("r", 8)
+                .style("fill", (d) => d.color)
+                .style("stroke", "white")
+                .style("stroke-width", 2);
 
-                group.on('click', function (event, d) {
-                    event.stopPropagation(); // Important if also using drag on the same element
+            group.on("click", function (event, d) {
+                event.stopPropagation();
 
-                    pointToColor = d; // Store the data object of the clicked point
-                    const circleElement = d3.select(this).select('circle').node();
-                    const rect = circleElement.getBoundingClientRect();
+                pointToColor = d;
 
-                    pointColorPicker.value = d.color; // Set current color
-                    pointColorPicker.focus();
-                    pointColorPicker.click(); // Programmatically open the color picker dialog
-                });
+                pointColorPicker.value = d.color;
+                pointColorPicker.focus();
+                pointColorPicker.click();
+            });
 
-                return group;
-            }
-        );
+            return group;
+        });
 
-    pointColorPicker.addEventListener('input', function (event) {
-        if (pointToColor) {
-            pointToColor.color = event.target.value; // Update data
-
-            // Find the corresponding SVG group and update its visuals
-            svgInner.selectAll('.interactive-point-group')
-                .filter(d_svg => d_svg.id === pointToColor.id)
-                .each(function () {
-                    d3.select(this).select('circle').style('fill', pointToColor.color);
-                });
-
-            svgInner.selectAll('.iso-range-group')
-                .filter(d_svg => d_svg.id === pointToColor.id)
-                .each(function () {
-                    d3.select(this).select('.iso-range-indicator-rect')
-                        .style('fill', pointToColor.color)
-                        .style('stroke', pointToColor.color);
-                    d3.select(this).select('.iso-range-indicator-triangle')
-                        .style('fill', pointToColor.color)
-                        .style('stroke', pointToColor.color);
-                });
-
-            onPointUpdate();
-        }
-    });
+    pointColorPicker.addEventListener("input", onPointColorPickerInput);
 
     // Function to update both group transform and line attributes
     function updatePointVisuals(selection) {
-        selection.attr('transform', d => `translate(${xScale(d.x)}, ${yScale(d.y)})`);
+        selection.attr(
+            "transform",
+            (d) => `translate(${xScale(d.x)}, ${yScale(d.y)})`
+        );
 
-        selection.select('.point-to-axis-line')
-            .attr('x1', 0) // Relative to the group's new position
-            .attr('y1', 0) // Relative to the group's new position
-            .attr('x2', 0) // Stays vertical
-            .attr('y2', d => {
-                // yScale.domain()[0] is the data value for y=0 (e.g., 0)
-                // yScale(yScale.domain()[0]) is the screen y-coordinate of the x-axis
-                // yScale(d.y) is the screen y-coordinate of the point
-                // The difference is the length of the line in screen units
-                return yScale(yScale.domain()[0]) - yScale(d.y);
-            });
+        selection
+            .select(".point-to-axis-line")
+            .attr("x1", 0)
+            .attr("y1", 0)
+            .attr("x2", 0)
+            .attr("y2", (d) => yScale(yScale.domain()[0]) - yScale(d.y));
     }
 
     // Apply initial positions and line attributes
     updatePointVisuals(pointsGroup);
 
-    // Add drag behavior
-    const dragHandler = d3.drag()
-        .on('start', function (event, d) {
+    const dragHandler = d3
+        .drag()
+        .on("start", function (event, d) {
             draggedPoint = d;
-            d3.select(this).raise().style('cursor', 'grabbing'); // Bring to front and change cursor
-            // Optionally, make the active point slightly larger or change its appearance
-            d3.select(this).select('circle').transition().duration(100).attr('r', 10);
-            d3.select(this).select('line').style('stroke', '#ffffffff').attr('stroke-width', 1); // Highlight the line
+            d3.select(this).raise().style("cursor", "grabbing");
+
+            d3.select(this)
+                .select("circle")
+                .transition()
+                .duration(100)
+                .attr("r", 10);
+
+            d3.select(this)
+                .select("line")
+                .style("stroke", "#ffffffff")
+                .attr("stroke-width", 1);
         })
-        .on('drag', function (event, d) {
-            // Convert mouse position back to data coordinates
-            // d3.pointer(event, svgInner.node()) gives [x, y] relative to svgInner
+        .on("drag", function (event, d) {
             const [mouseX, mouseY] = d3.pointer(event, svgInner.node());
 
-            // Clamp values to stay within the domain of your scales
-            d.x = clamp(xScale.invert(mouseX), xScale.domain()[0], xScale.domain()[1]);
-            d.y = clamp(yScale.invert(mouseY), yScale.domain()[0], yScale.domain()[1]);
+            d.x = clamp(
+                xScale.invert(mouseX),
+                xScale.domain()[0],
+                xScale.domain()[1]
+            );
+            d.y = clamp(
+                yScale.invert(mouseY),
+                yScale.domain()[0],
+                yScale.domain()[1]
+            );
 
             // Update the visual position
             updatePointVisuals(d3.select(this));
 
             // Update the corresponding range indicator
-            updateRangeIndicators(rangeGroup.filter(range_d => range_d.id === d.id));
+            updateRangeIndicators(
+                rangeGroup.filter((range_d) => range_d.id === d.id)
+            );
 
-            // --- YOUR CONFIGURATION LOGIC HERE ---
-            // This is where you'd call a function to update whatever these points control
-            // For example: updateTransferFunction(interactivePoints);
-            //console.log(`Point ${d.id} dragged to: x=${d.x.toFixed(2)}, y=${d.y.toFixed(2)}`);
-            onPointUpdate(); // Call a general update function
+            onPointUpdate();
         })
-        .on('end', function (event, d) {
+        .on("end", function (event, d) {
             draggedPoint = null;
-            d3.select(this).style('cursor', 'grab');
-            d3.select(this).select('circle').transition().duration(100).attr('r', 8);
-            d3.select(this).select('line').style('stroke', '#ffffffaa').attr('stroke-width', 2); // Highlight the line
-            // --- FINAL UPDATE ---
+            d3.select(this).style("cursor", "grab");
+            d3.select(this)
+                .select("circle")
+                .transition()
+                .duration(100)
+                .attr("r", 8);
+            d3.select(this)
+                .select("line")
+                .style("stroke", "#ffffffaa")
+                .attr("stroke-width", 2);
+
             onPointUpdate();
         });
 
     pointsGroup.call(dragHandler);
-
-    window.updateRangeIndicators = function () {
-        if (window.svgInner) {
-            const rangeContainer = window.svgInner.select('.iso-ranges-container');
-            const currentRangeGroup = rangeContainer.selectAll('.iso-range-group');
-            updateRangeIndicators(currentRangeGroup);
-        }
-    };
-
-    window.updateRangeIndicatorFalloffMode = function () {
-        if (window.svgInner) {
-            const rangeContainer = window.svgInner.select('.iso-ranges-container');
-            const currentRangeGroup = rangeContainer.selectAll('.iso-range-group');
-            updateRangeIndicators(currentRangeGroup);
-        }
-    };
-
-    window.updateRangeIndicatorsVisibility = function (visible) {
-        rangeIndicatorsVisible = visible;
-        if (window.svgInner) {
-            const rangeContainer = window.svgInner.select('.iso-ranges-container');
-            const currentRangeGroup = rangeContainer.selectAll('.iso-range-group');
-            updateRangeIndicators(currentRangeGroup);
-        }
-    };
 }
 
-// Helper clamp function
+/**
+ * Update the iso surface color when the value of the color picker changes.
+ * @param {Event} event - The event of the color input.
+ */
+function onPointColorPickerInput(event) {
+    if (pointToColor) {
+        pointToColor.color = event.target.value;
+
+        svgInner
+            .selectAll(".interactive-point-group")
+            .filter((d_svg) => d_svg.id === pointToColor.id)
+            .each(function () {
+                d3.select(this)
+                    .select("circle")
+                    .style("fill", pointToColor.color);
+            });
+
+        svgInner
+            .selectAll(".iso-range-group")
+            .filter((d_svg) => d_svg.id === pointToColor.id)
+            .each(function () {
+                d3.select(this)
+                    .select(".iso-range-indicator-rect")
+                    .style("fill", pointToColor.color)
+                    .style("stroke", pointToColor.color);
+                d3.select(this)
+                    .select(".iso-range-indicator-triangle")
+                    .style("fill", pointToColor.color)
+                    .style("stroke", pointToColor.color);
+            });
+
+        onPointUpdate();
+    }
+}
+
+/**
+ * Update the range indicators of the iso surfaces.
+ */
+function updateRangeIndicators() {
+    if (window.svgInner === undefined) {
+        return;
+    }
+
+    // Get current falloff mode (0: linear, 1: binary)
+    const isLinearMode =
+        isoFalloffMode !== undefined ? isoFalloffMode === 0 : true;
+
+    const showRangeIndicators = rangeIndicatorsVisible;
+
+    // Update rectangle (for binary mode)
+    const currentRangeGroup = window.svgInner
+        .select(".iso-ranges-container")
+        .selectAll(".iso-range-group");
+
+    currentRangeGroup
+        .select(".iso-range-indicator-rect")
+        .attr("x", (d) => {
+            const leftBound = Math.max(0, xScale(d.x - currentIsoRange));
+            return leftBound;
+        })
+        .attr("y", (d) => yScale(d.y))
+        .attr("width", (d) => {
+            const leftBound = Math.max(0, xScale(d.x - currentIsoRange));
+            const rightBound = Math.min(
+                xScale.range()[1],
+                xScale(d.x + currentIsoRange)
+            );
+            return Math.max(0, rightBound - leftBound);
+        })
+        .attr("height", (d) => yScale.range()[0] - yScale(d.y))
+        .style(
+            "display",
+            !showRangeIndicators || isLinearMode ? "none" : "block"
+        );
+
+    // Update triangle (for linear mode)
+    currentRangeGroup
+        .select(".iso-range-indicator-triangle")
+        .attr("points", (d) => {
+            const pointX = xScale(d.x);
+            const pointY = yScale(d.y);
+            const leftBound = Math.max(0, xScale(d.x - currentIsoRange));
+            const rightBound = Math.min(
+                xScale.range()[1],
+                xScale(d.x + currentIsoRange)
+            );
+            const bottomY = yScale.range()[0];
+
+            // Create triangle points: peak at iso point, base at bottom
+            return `${pointX},${pointY} ${leftBound},${bottomY} ${rightBound},${bottomY}`;
+        })
+        .style(
+            "display",
+            !showRangeIndicators || !isLinearMode ? "none" : "block"
+        );
+}
+
+/**
+ * Clamp a value between a minimum and maximum value.
+ * @param {number} value
+ * @param {number} min
+ * @param {number} max
+ * @returns {number}
+ */
 function clamp(value, min, max) {
     return Math.max(min, Math.min(max, value));
 }
 
+/**
+ * Convert the list of points to the format expected by the iso surface shader.
+ * @param {{x: number, y: number, color: string}[]} points
+ * @returns {{x: number, y: number, color: number[]}[]}
+ */
 function pointsToIsoSurfacePoints(points) {
-    return points.map(p => ({ x: p.x, y: p.y, color: hexToRgbArray(p.color) }));
+    return points.map((p) => ({
+        x: p.x,
+        y: p.y,
+        color: hexToRgbArray(p.color),
+    }));
 }
 
-// Placeholder for your logic that uses the points
+/**
+ * Pass the iso surfaces to the shader and update the transfer function UI.
+ */
 function onPointUpdate() {
-    // Example: get the current values of all points
-    // Here you would trigger updates to your shaders, other UI elements, etc.
-    // For example, if these points define a transfer function for volume rendering:
-    // updateShaderWithTransferFunction(currentPointValues);
     setIsoPoints(pointsToIsoSurfacePoints(interactivePoints));
     updateTransferFunctionUniforms();
 
-    // Update the iso points list UI
     renderIsoPointsList();
 
-    // Update range indicators with current falloff mode
-    if (window.updateRangeIndicatorFalloffMode) {
-        window.updateRangeIndicatorFalloffMode();
-    }
+    updateRangeIndicators();
 }
 
+/**
+ * Render the iso points list UI.
+ */
 function renderIsoPointsList() {
-    const container = document.getElementById('isoPointsList');
+    const container = document.getElementById("isoPointsList");
     if (!container) return;
 
-    // Clear existing content
-    container.innerHTML = '';
+    container.innerHTML = "";
 
-    // Render each iso point
     interactivePoints.forEach((point, index) => {
-        const pointItem = document.createElement('div');
-        pointItem.className = 'iso-point-item';
+        const pointItem = document.createElement("div");
+        pointItem.className = "iso-point-item";
         pointItem.innerHTML = `
             <div class="iso-point-info">
-                <div class="iso-point-color" style="background-color: ${point.color}; cursor: pointer;" data-point-id="${point.id}"></div>
+                <div class="iso-point-color" style="background-color: ${
+                    point.color
+                }; cursor: pointer;" data-point-id="${point.id}"></div>
                 <div class="iso-point-info-container">
-                    <div class="iso-point-label">${point.label}</div>
-                    <div class="iso-point-coords">x: ${point.x.toFixed(2)}, y: ${point.y.toFixed(2)}</div>
+                    <div class="iso-point-label">Surface ${index + 1}</div>
+                    <div class="iso-point-coords">x: ${point.x.toFixed(
+                        2
+                    )}, y: ${point.y.toFixed(2)}</div>
                 </div>
             </div>
-            <button class="iso-point-remove" onclick="removeIsoPoint('${point.id}')" ${interactivePoints.length <= 1 ? 'disabled' : ''}>
+            <button type="button" class="iso-point-remove" data-point-id="${
+                point.id
+            }" ${interactivePoints.length <= 1 ? "disabled" : ""}>
                 X
             </button>
         `;
 
-        // Add click handler to the color indicator
-        const colorIndicator = pointItem.querySelector('.iso-point-color');
-        colorIndicator.addEventListener('click', function (event) {
-            event.stopPropagation();
+        pointItem
+            .querySelector(".iso-point-color")
+            .addEventListener("click", onColorIndicatorClick);
 
-            // Find the point data
-            const pointId = this.getAttribute('data-point-id');
-            const clickedPoint = interactivePoints.find(p => p.id === pointId);
-
-            if (clickedPoint) {
-                const pointColorPicker = document.getElementById('pointColorPicker');
-                pointToColor = clickedPoint; // Set the global variable used by the color picker
-                pointColorPicker.value = clickedPoint.color; // Set current color
-                pointColorPicker.focus();
-                pointColorPicker.click(); // Programmatically open the color picker dialog
-            }
-        });
+        pointItem
+            .querySelector(".iso-point-remove")
+            .addEventListener("click", onRemoveButtonClick);
 
         container.appendChild(pointItem);
     });
 
-    // Update the add button state based on the current number of points
-    const addButton = document.querySelector('.iso-point-add-button');
-    const pointsCount = document.getElementById('isoPointsCount');
+    const addButton = document.querySelector(".iso-point-add-button");
+    const pointsCount = document.getElementById("isoPointsCount");
 
+    // Enable/disable the add button based on the number of points
     if (addButton) {
         if (interactivePoints.length >= 5) {
             addButton.disabled = true;
         } else {
             addButton.disabled = false;
         }
-        addButton.textContent = 'Add Point';
+        addButton.textContent = "Add Point";
     }
 
     if (pointsCount) {
@@ -344,85 +379,105 @@ function renderIsoPointsList() {
     }
 }
 
-// Function to renumber all points sequentially
-function renumberIsoPoints() {
-    interactivePoints.forEach((point, index) => {
-        point.label = `Surface ${index + 1}`;
-    });
+/**
+ * Clicking the color indicator opens the color picker.
+ */
+function onColorIndicatorClick(event) {
+    event.stopPropagation();
+
+    const pointId = this.getAttribute("data-point-id");
+    const clickedPoint = interactivePoints.find((p) => p.id === pointId);
+
+    if (clickedPoint) {
+        const pointColorPicker = document.getElementById("pointColorPicker");
+        pointToColor = clickedPoint;
+        pointColorPicker.value = clickedPoint.color;
+        pointColorPicker.focus();
+        pointColorPicker.click();
+    }
 }
 
-// Function to add a new iso point
+/**
+ * Clicking the remove button removes the iso point.
+ */
+function onRemoveButtonClick(event) {
+    const pointId = this.getAttribute("data-point-id");
+    removeIsoPoint(pointId);
+}
+
+/**
+ * Add a new iso point with default values.
+ */
 function addIsoPoint() {
     if (interactivePoints.length >= 5) {
         return;
     }
 
-    // Generate a unique ID
-    const newId = 'iso' + (Date.now() % 10000);
-
-    // Generate a vibrant random color
-    const colors = ['#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#feca57', '#ff9ff3', '#54a0ff', '#5f27cd'];
+    const newId = "iso" + (Date.now() % 10000);
+    const colors = [
+        "#ff6b6b",
+        "#4ecdc4",
+        "#45b7d1",
+        "#96ceb4",
+        "#feca57",
+        "#ff9ff3",
+        "#54a0ff",
+        "#5f27cd",
+    ];
     const randomColor = colors[Math.floor(Math.random() * colors.length)];
 
-    // Create a new point with default values
     const newPoint = {
         id: newId,
-        x: 0.5, // Default x position (middle)
-        y: 0.5, // Default y position (middle)
+        x: 0.5,
+        y: 0.5,
         color: randomColor,
-        label: `Surface ${interactivePoints.length + 1}`
     };
 
-    // Add to the array
     interactivePoints.push(newPoint);
 
-    // Update the UI and visualization
-    renderIsoPointsList();
     onPointUpdate();
 
-    // If histogram is already created, redraw interactive points
     if (window.svgInner && window.xScale && window.yScale) {
         drawInteractivePoints(window.svgInner, window.xScale, window.yScale);
     }
 }
 
-// Function to remove an iso point
+/**
+ * Remove an iso point from the list.
+ * @param {string} pointId - The id of the point to remove.
+ */
 function removeIsoPoint(pointId) {
-    // Ensure we don't remove the last point
     if (interactivePoints.length <= 1) {
-        alert('Cannot remove the last iso point. At least one point must remain.');
         return;
     }
 
-    // Find and remove the point
-    const pointIndex = interactivePoints.findIndex(p => p.id === pointId);
+    const pointIndex = interactivePoints.findIndex((p) => p.id === pointId);
     if (pointIndex !== -1) {
         interactivePoints.splice(pointIndex, 1);
 
-        // Renumber all remaining points to maintain sequential order
-        renumberIsoPoints();
-
-        // Update the UI and visualization
         renderIsoPointsList();
         onPointUpdate();
 
-        // If histogram is already created, redraw interactive points
         if (window.svgInner && window.xScale && window.yScale) {
-            drawInteractivePoints(window.svgInner, window.xScale, window.yScale);
+            drawInteractivePoints(
+                window.svgInner,
+                window.xScale,
+                window.yScale
+            );
         }
     }
 }
 
+/**
+ * Update the iso range.
+ * @param {string} value - The value of the iso range.
+ */
 function updateIsoRange(value) {
     currentIsoRange = parseFloat(value);
 
-    // Update the UI inputs to stay in sync
     document.getElementById("isoRangeValue").value = currentIsoRange;
     document.getElementById("isoRangeInput").value = currentIsoRange;
 
-    if (window.updateRangeIndicators) {
-        window.updateRangeIndicators();
-    }
-
+    updateRangeIndicators();
     updateTransferFunctionUniforms();
 }

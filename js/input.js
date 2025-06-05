@@ -238,10 +238,10 @@ function hexToRgb(hex) {
     var result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
     return result
         ? {
-            r: parseInt(result[1], 16),
-            g: parseInt(result[2], 16),
-            b: parseInt(result[3], 16),
-        }
+              r: parseInt(result[1], 16),
+              g: parseInt(result[2], 16),
+              b: parseInt(result[3], 16),
+          }
         : null;
 }
 
@@ -322,12 +322,9 @@ function updatePlaneMode(planeMode) {
 
 function updateIsoFalloffMode(value) {
     isoFalloffMode = parseInt(value);
-    updateShaderInput({ isoFalloffMode });
 
-    // Update range indicator visualization if available
-    if (window.updateRangeIndicatorFalloffMode) {
-        window.updateRangeIndicatorFalloffMode();
-    }
+    updateShaderInput({ isoFalloffMode });
+    updateRangeIndicators();
 }
 
 function getCuttingPlaneProps() {
@@ -348,41 +345,43 @@ function updateIsoControlsVisibility() {
     // Get iso range controls
     const isoRangeInput = document.getElementById("isoRangeInput");
     const isoRangeValue = document.getElementById("isoRangeValue");
-    const isoRangeField = isoRangeInput ? isoRangeInput.closest('.input-field') : null;
+    const isoRangeField = isoRangeInput
+        ? isoRangeInput.closest(".input-field")
+        : null;
 
     // Get iso falloff mode controls - find the parent input-field by looking for radio buttons
     let isoFalloffField = null;
-    const isoFalloffInputs = document.querySelectorAll('input[name="isoFalloffMode"]');
+    const isoFalloffInputs = document.querySelectorAll(
+        'input[name="isoFalloffMode"]'
+    );
     if (isoFalloffInputs.length > 0) {
-        isoFalloffField = isoFalloffInputs[0].closest('.input-field');
+        isoFalloffField = isoFalloffInputs[0].closest(".input-field");
     }
 
     if (isTFStar) {
         // Hide controls for TF* modes
         if (isoRangeField) {
-            isoRangeField.classList.add('tf-star-hidden');
-            isoRangeField.classList.remove('tf-star-visible');
+            isoRangeField.classList.add("tf-star-hidden");
+            isoRangeField.classList.remove("tf-star-visible");
         }
 
         if (isoFalloffField) {
-            isoFalloffField.classList.add('tf-star-hidden');
-            isoFalloffField.classList.remove('tf-star-visible');
+            isoFalloffField.classList.add("tf-star-hidden");
+            isoFalloffField.classList.remove("tf-star-visible");
         }
     } else {
         // Show controls for non-TF* modes
         if (isoRangeField) {
-            isoRangeField.classList.remove('tf-star-hidden');
-            isoRangeField.classList.add('tf-star-visible');
+            isoRangeField.classList.remove("tf-star-hidden");
+            isoRangeField.classList.add("tf-star-visible");
         }
 
         if (isoFalloffField) {
-            isoFalloffField.classList.remove('tf-star-hidden');
-            isoFalloffField.classList.add('tf-star-visible');
+            isoFalloffField.classList.remove("tf-star-hidden");
+            isoFalloffField.classList.add("tf-star-visible");
         }
     }
 
-    // Update range indicators visibility in histogram
-    if (window.updateRangeIndicatorsVisibility) {
-        window.updateRangeIndicatorsVisibility(!isTFStar);
-    }
+    rangeIndicatorsVisible = !isTFStar;
+    updateRangeIndicators();
 }
