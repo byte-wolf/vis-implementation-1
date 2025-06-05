@@ -118,7 +118,6 @@ button.btn-secondary {
 
 button.btn-primary:hover {
     background-color: #ffffff;
-    /* transform: scale(1.05); */
 }
 
 button.btn-secondary:hover {
@@ -188,7 +187,6 @@ input[type="color"] {
     cursor: pointer;
 }
 
-/* Smooth transition for foreground color field visibility */
 #foregroundColorField {
     transition: opacity 0.3s ease-in-out;
 }
@@ -266,16 +264,12 @@ h4 {
     font-weight: 500;
 }
 
-
 .ui-vertical-center {
     display: flex;
     flex-direction: column;
     justify-content: center;
     gap: 10px;
 }
-
-
-/* Inline Controls */
 
 .structural-container {
     position: relative;
@@ -424,7 +418,6 @@ h4 {
     font-weight: bold;
     transition: 0.2s;
     margin-top: auto;
-    /* Push to bottom */
 }
 
 .iso-point-add-button:hover:not(:disabled) {
